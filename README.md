@@ -1,5 +1,3 @@
-# What is Micropeptidome?
-
 ```text
           ____            _   _     _                      
  _   _   |  __ \         | | (_)   | |                     
@@ -10,39 +8,17 @@
 | |                | |                                       
 |_|                |_|                  
 
-
+```
 
 ## What is Micropeptidome?
 
-**Micropeptidome** is a framework for identifying smORF-encoded microproteins (<150aa) from both proteomic ans transcriptomic experiments. It distinguishes between:
+**Micropeptidome** is a framework for identifying microproteins (<150aa) from both proteomic and transcriptomic experiments. It inludes several tools:
 
-- **SAMs** (Swiss-Prot Analog Microproteins): smORFs that resemble microproteins in Swiss-Prot, the reviewed  section of the UniProt Knowledgebase.
-- **PRISMs** (Physicochemically Resembling In Silico Microproteins): smORFs that resemble synthetic sequences.
-
-ShortStop also supports the generation of matched negative control microprotein sequences (i.e., PRISMS) for downstream applications.
+- **getefear**: transform your list (.csv) of microproteins in a .gtf doc which can be used to classify later with ShortStop.
+- **ShortStop**: Classifies smORFs as SAMs or PRISMs using a pre-trained ML model ([click for detailed documentation](ShortStop.md)). 
 
 ---
 
-## Why Use ShortStop?
-
-Thousands of smORFs are actively translated in the human transcriptome, yet the functions of their encoded microproteins remain unknown. 
-
-Protein function is conventionally inferred from evidence of evolutionary selection. However, most encoded microproteins are evolutionarily young and lack detectable sequence conservation across species. 
-
-ShortStop provides a homology-independent approach to identify microproteins that share key physicochemical properties with known proteins, even in the absence of sequence similarity. 
-
-ShortStop classifications supports hypothesis-driven studies to "deorphanize" the function of translating smORFs. It also provides a foundation for future benchmarking of new algorithms and methods as data emerges from ongoing studies.
-
----
-
-## Key Features
-
-- Classifies smORFs as SAMs or PRISMs using a pre-trained ML model
-- Generates composition-matched negative control microprotein sequences
-- Extracts physicochemical features from input smORFs
-- Supports model training, prediction, and feature extraction as CLI modules
-
----
 
 ## Requirements
 
