@@ -4,7 +4,7 @@
 
 ## What is Micropeptidome?
 
-**Micropeptidome** is a machine learning framework for identifying smORF-encoded microproteins (<150aa) that share biochemical similarity to highly annotated microproteins. It distinguishes between:
+**Micropeptidome** is a framework for identifying smORF-encoded microproteins (<150aa) from both proteomic ans transcriptomic experiments. It distinguishes between:
 
 - **SAMs** (Swiss-Prot Analog Microproteins): smORFs that resemble microproteins in Swiss-Prot, the reviewed  section of the UniProt Knowledgebase.
 - **PRISMs** (Physicochemically Resembling In Silico Microproteins): smORFs that resemble synthetic sequences.
@@ -53,13 +53,13 @@ You’ll need:
 
 ### Option 1 – Direct from GitHub (recommended)
 ```bash
-pip install git+https://github.com/brendan-miller-salk/ShortStop.git
+pip install git+https://github.com/Sabiolab/Micropeptidome.git
 ```
 
 ### Option 2 – Clone and Install Locally
 ```bash
-git clone https://github.com/brendan-miller-salk/ShortStop.git
-cd ShortStop
+git clone https://github.com/Sabiolab/Micropeptidome.git
+cd Micropeptidome
 pip install .
 ```
 
@@ -84,91 +84,6 @@ Install a C compiler for your system:
 - **Windows**  
   Download and install: [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 
----
-
-## Quickstart (Demo Mode)
-
-Run the built-in demo, which exercises all core modules:
-
-```bash
-shortstop demo
-```
-
-If reference genome are not provided manually, they will be auto-downloaded into the source code directory. These file in total are ~5 GB.
-
-To manually specify references and avoid downloads:
-
-```bash
-shortstop demo \
-  --genome demo_data/hg_38_primary.fa \
-  --positive_gtf demo_data/gencode.v43.primary_assembly.basic.annotation.gtf
-```
-
-Estimated run time is 5 minutes.
-
----
-
-## Usage
-
-### Predict Mode
-
-```bash
-shortstop predict -h
-```
-
-Classifies smORFs as `SAM:intracellular`, `SAM:secreted`, or `PRISM`
-
-Prediction takes approximately 5-10 minutes per 10,000 smORF sequences. It is recommended to parallelize (e.g., on a cluster) if attempting to classify >1 million sequences.
-
----
-
-### In Silico Mode
-
-```bash
-shortstop insilico -h
-```
-
-Generates in silico microprotein sequences matched to your input smORFs by length, amino acid, and nucleic acid composition
-
----
-
-### Feature Extraction
-
-```bash
-shortstop feature_extract -h
-```
-
-Extract nucleotide and amino acid features from smORFs.
-
----
-
-### Training Mode
-
-```bash
-shortstop train -h
-```
-
-Train a custom classifier from your own positive/negative examples.
-
----
-
-## Output Structure
-
-```
-shortstop_output/
-├── features/
-│   └── extracted_features_of_smorfs.csv
-├── predictions/
-│   ├── sam_secreted.csv
-│   ├── sam_intracellular.csv
-│   ├── prisms.csv
-│   └── shortstop_classifications.csv
-├── sequences/
-│   ├── positive_unknown_insilico_sequences.csv
-│   ├── positive_and_unknown_sequences.csv
-│   ├── unknown_sequences.csv
-│   └── positive_proteins.gtf
-```
 
 
 ## License and Contributions
