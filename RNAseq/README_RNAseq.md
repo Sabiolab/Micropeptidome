@@ -59,8 +59,9 @@ The pipeline performs transcriptome assembly, ORF prediction, size-based filteri
 > ```
 > ✅ This generates:
 >
-> -- *merged.transcripts.fa.transdecoder.pep*: Predicted protein sequences
-> -- *merged.transcripts.fa.transdecoder.gff3*: ORF coordinates in transcript space
+> - *merged.transcripts.fa.transdecoder.pep*: Predicted protein sequences
+> - *merged.transcripts.fa.transdecoder.gff3*: ORF coordinates in transcript space
+
 
 ---
 
@@ -77,8 +78,8 @@ The pipeline performs transcriptome assembly, ORF prediction, size-based filteri
 > ```
 > ✅ The script outputs:
 >
-> -- *smorfs.fa*: FASTA file of filtered smORF sequences
-> -- *smorf_ids.txt*: List of retained smORF identifiers
+> - *smorfs.fa*: FASTA file of filtered smORF sequences
+> - *smorf_ids.txt*: List of retained smORF identifiers
 >
 > Corresponding GFF3 entries are extracted to create a smORF-specific annotation file:
 > ```bash
@@ -98,9 +99,9 @@ The pipeline performs transcriptome assembly, ORF prediction, size-based filteri
 > ```
 > ✅ The resulting GTF (*smorfs_shortstop.gtf*) contains genomic coordinates with three feature types:
 > 
-> -- *transcript*: Full transcript span (including UTRs from StringTie model)
-> -- *exon*: All exons from the parent transcript
-> -- *CDS*: Genomic coordinates of each smORF coding segment
+> - *transcript*: Full transcript span (including UTRs from StringTie model)
+> - *exon*: All exons from the parent transcript
+> - *CDS*: Genomic coordinates of each smORF coding segment
 > 
 > ✅ This format is compatible with genome-based annotation tools and provides the necessary input for *ShortStop* analysis.
 
