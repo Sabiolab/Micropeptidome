@@ -28,13 +28,17 @@ The pipeline performs transcriptome assembly, ORF prediction, size-based filteri
 >  -p 8
 > ```
 
+---
+
 > The *De_novo_transcripts.py* script quantifies novel versus annotated transcripts by parsing the ref_gene_id attribute in the merged GTF. Transcripts lacking this attribute are classified as novel:
 > ```bash
 > chmod +x De_novo_transcripts.py
 > ./De_novo_transcripts.py
 > ```
 >
-> This provides assembly quality metrics, reporting total transcripts, annotated transcripts, novel transcripts, and displaying examples of novel transcript coordinates.
+> ✅ This provides assembly quality metrics, reporting total transcripts, annotated transcripts, novel transcripts, and displaying examples of novel transcript coordinates.
+
+---
 
 > Transcript sequences are extracted from the merged GTF using *gffread*, which splices exons according to the annotation and generates a multi-FASTA file where each entry represents a complete spliced transcript
 > ```bash
@@ -42,6 +46,8 @@ The pipeline performs transcriptome assembly, ORF prediction, size-based filteri
 >  -g GRCh38.primary_assembly.genome.fa \
 >  -w merged.transcripts.fa
 > ```
+
+---
 
 > *TransDecoder* predicts ORFs in transcript coordinates through a two-step process. First, candidate ORFs meeting minimum length criteria are identified:
 > ```bash
@@ -51,10 +57,12 @@ The pipeline performs transcriptome assembly, ORF prediction, size-based filteri
 > ```bash
 > TransDecoder.Predict -t merged.transcripts.fa
 > ```
-> This generates:
+> ✅ This generates:
 >
 > -- *merged.transcripts.fa.transdecoder.pep*: Predicted protein sequences
 > -- *merged.transcripts.fa.transdecoder.gff3*: ORF coordinates in transcript space
+
+---
 
 > The *filter_smorf_pep.py* script filters TransDecoder peptides by length, retaining only those within the smORF size range:
 > ```bash
@@ -67,7 +75,7 @@ The pipeline performs transcriptome assembly, ORF prediction, size-based filteri
 >     --out_fasta smorfs.fa \
 >     --out_ids smorf_ids.txt
 > ```
-> The script outputs:
+> ✅ The script outputs:
 >
 > -- *smorfs.fa*: FASTA file of filtered smORF sequences
 > -- *smorf_ids.txt*: List of retained smORF identifiers
@@ -76,6 +84,8 @@ The pipeline performs transcriptome assembly, ORF prediction, size-based filteri
 > ```bash
 > grep -F -f smorf_ids.txt merged.transcripts.fa.transdecoder.gff3 > smorfs.gff3
 > ```
+
+---
 
 > The *smorfs_transcript_to_genome_gtf.py* script performs coordinate liftover by mapping transcript positions to genomic coordinates through exon structure analysis:
 > ```bash
@@ -86,13 +96,13 @@ The pipeline performs transcriptome assembly, ORF prediction, size-based filteri
 >   --smorfs_gff3 smorfs.gff3 \
 >   --out_gtf smorfs_shortstop.gtf
 > ```
-> The resulting GTF (*smorfs_shortstop.gtf*) contains genomic coordinates with three feature types:
+> ✅ The resulting GTF (*smorfs_shortstop.gtf*) contains genomic coordinates with three feature types:
 > 
 > -- *transcript*: Full transcript span (including UTRs from StringTie model)
 > -- *exon*: All exons from the parent transcript
 > -- *CDS*: Genomic coordinates of each smORF coding segment
 > 
-> This format is compatible with genome-based annotation tools and provides the necessary input for *ShortStop* analysis.
+> ✅ This format is compatible with genome-based annotation tools and provides the necessary input for *ShortStop* analysis.
 
 
 
