@@ -24,60 +24,8 @@
 
 You’ll need:
 
-1. A GTF file of smORFs that must contain CDS and transcripts features
-2. A matched reference genome (e.g., hg38, which automatically downloads upon initiating demo mode).
+1. BAM and FASTQ files. Preferrably paired end.
+2. A matched reference genome (e.g., hg38, which automatically downloads upon initiating ShortStop demo mode)
+3. 
 
 ---
-
-## Installation
-
-> ✅ We recommend the creation of a conda environment:
-> ```bash
-> conda create -n micropeptidome python=3.9
-> conda activate micropeptidome
-> ```
-
-### Option 1 – Direct from GitHub (recommended)
-```bash
-pip install git+https://github.com/Sabiolab/Micropeptidome/ShortStop.git
-```
-
-### Option 2 – Clone and Install Locally
-```bash
-git clone https://github.com/Sabiolab/Micropeptidome/ShortStop.git
-cd Micropeptidome
-pip install .
-```
-
-### ⚠️ If you get a C compilation error during install...
-Install a C compiler for your system:
-
-- **Ubuntu/Debian**
-  ```bash
-  sudo apt-get install build-essential
-  ```
-
-- **Fedora/CentOS**
-  ```bash
-  sudo dnf install gcc
-  ```
-
-- **Arch Linux**
-  ```bash
-  sudo pacman -S base-devel
-  ```
-
-- **Windows**  
-  Download and install: [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-
-
-
-## License and Contributions
-
-This project is licensed for **non-commercial academic research use only**.  
-See [LICENSE.md](./LICENSE.md) for full terms.
-
-By contributing to this repository, you agree to the [Contributor License Agreement (CLA)](./CLA.md).  
-
-
-By downloading or using this tool, you agree to the terms in LICENSE.md and CLA.md.
