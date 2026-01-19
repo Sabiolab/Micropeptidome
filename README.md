@@ -82,6 +82,11 @@ Micropeptidome
 ├── scripts/
 │   ├── fastear.py
 │   └── getefear.py
+│   ├── cuentaSAM.py
+│   ├── heterogenicitySAMs.py
+│   ├── probabilidaes_SAMs.R
+│   ├── Venn_SAMs.R
+│   └── getefear.py
 ├── RNAseq/
 │   ├── README_RNAseq.md
 │   ├── De_novo_transcripts.py
