@@ -76,7 +76,8 @@ Install a C compiler for your system:
 ## Folder structure
 
 ```text
-Micropeptidome
+.Micropeptidome
+│  
 ├── README.md
 │  
 ├── scripts/
@@ -87,11 +88,13 @@ Micropeptidome
 │   ├── probabilidaes_SAMs.R
 │   ├── Venn_SAMs.R
 │   └── getefear.py
+│  
 ├── RNAseq/
 │   ├── README_RNAseq.md
 │   ├── De_novo_transcripts.py
 │   ├── filetr_smorf_pep.py
 │   └── smorfs_transcript_to_genome_gtf.py
+│  
 └── ShortStop/  --> Clone from 'brendan-miller-salk/ShortStop'
     ├── README.md
     └── src/shortstop/
