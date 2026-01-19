@@ -86,7 +86,7 @@ Micropeptidome
 │   ├── De_novo_transcripts.py
 │   ├── filetr_smorf_pep.py
 │   └── smorfs_transcript_to_genome_gtf.py
-└── ShortStop/
+└── ShortStop/  --> Clone from 'brendan-miller-salk/ShortStop'
     ├── README.md
     └── src/shortstop/
         └── shortStop.py
