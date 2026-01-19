@@ -75,6 +75,7 @@ Install a C compiler for your system:
 
 ## Folder structure
 
+```text
 Micropeptidome
 ├── README.md
 │  
@@ -90,6 +91,7 @@ Micropeptidome
     ├── README.md
     └── src/shortstop/
         └── shortStop.py
+```
 
 
 ---
