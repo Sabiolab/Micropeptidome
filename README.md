@@ -70,7 +70,29 @@ Install a C compiler for your system:
 - **Windows**  
   Download and install: [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 
+---
 
+
+## Folder structure
+
+Micropeptidome
+├── README.md
+│  
+├── scripts/
+│   ├── fastear.py
+│   └── getefear.py
+├── RNAseq/
+│   ├── README_RNAseq.md
+│   ├── De_novo_transcripts.py
+│   ├── filetr_smorf_pep.py
+│   └── smorfs_transcript_to_genome_gtf.py
+└── ShortStop/
+    ├── README.md
+    └── src/shortstop/
+        └── shortStop.py
+
+
+---
 
 ## License and Contributions
 
