@@ -37,7 +37,7 @@ wget -O human_proteome.faa "https://rest.uniprot.org/uniprotkb/stream?query=orga
 ```
 ## Generate the Conda environmnets
 
-First, we need to create the enviroments the first time. For this, use the command below and change `/path/to/conda_envs `
+First, we need to create the enviroments the first time. For this, use the command below and change `/path/to/conda_envs` to set a directory where you want the enviroments to be created. The command below will create the enviroments for you with the apporpiate versions of all software that the pipeline will be using.
 ```{}
  snakemake --use-conda --conda-create-envs-only \
   --conda-frontend conda \
@@ -47,7 +47,7 @@ First, we need to create the enviroments the first time. For this, use the comma
 
 ## Run the pipeline
 
-First, change the settings in the `config.yaml` file and make sure all the variables are set. Remember to change `/path/to/conda_envs ` to the directory set above
+First, change the settings in the `config.yaml` file and make sure all the variables are set. Remember to change `/path/to/conda_envs ` to the directory set above.
 
 Run with:
 ```{}
