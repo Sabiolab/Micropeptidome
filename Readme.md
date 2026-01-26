@@ -24,12 +24,13 @@ gunzip Homo_sapiens.GRCh38.115.gtf.gz
 
 Then, we should download the proteome FASTA. 
 
-## PROTEOME
+## Proteome
 
 #### Proteome.faa (FASTA)
 wget -O human_proteome.faa \
 "https://rest.uniprot.org/uniprotkb/stream?query=organism_id:9606+AND+reviewed:true&format=fasta"
 
+## Generate the Conda environmnets
 
 Create the enviroments the first time:
 ```{}
@@ -38,6 +39,8 @@ Create the enviroments the first time:
   --conda-prefix /home/sbarber/conda_envs \
   -j 1 --latency-wait 60
 ```
+
+## Run the pipeline with
 
 Run with:
 ```{}
