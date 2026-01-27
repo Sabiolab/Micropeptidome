@@ -36,6 +36,9 @@ Then, we should download the proteome FASTA.
 ```{}
 wget -O human_proteome.faa "https://rest.uniprot.org/uniprotkb/stream?query=organism_id:9606+AND+reviewed:true&format=fasta"
 ```
+
+# Run μ-Peptidome analysis
+
 ## Generate the Conda environmnets
 
 First, we need to create the enviroments the first time. For this, use the command below and change `/path/to/conda_envs` to set a directory where you want the enviroments to be created. The command below will create the enviroments for you with the apporpiate versions of all software that the pipeline will be using.
@@ -59,7 +62,7 @@ snakemake --use-conda --slurm -j 32 \
   --latency-wait 60
 ```
 
-## Further considerations
+# Further considerations
 
 To use a prebuilt STAR index, set in config.yaml: `star_index_dir: "/path/to/existing/star_index/2.7.10a"` and ensure /path/to/existing/star_index/Genome exists. The default index is set as 2.7.10a, but this can be changed in the `STAR.yaml` to any other version.
 
