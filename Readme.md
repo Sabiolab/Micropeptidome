@@ -14,9 +14,9 @@ git clone https://github.com/SantiBarber/Micropeptidome.git
 cd Micropeptidome
 ```
 
-Then, please download the references that the pipeline needs to run. I would recommend downloading the Ensembl GTF annotation and FASTA because, for smORF annotation later, those make a distinction between 5' and 3' UTRs. However, both should work fine.
+Then, please download the required proteome/genome references. Please find below a few examples. I would recommend downloading the Ensembl GTF annotation and FASTA since those make a distinction between 5' and 3' UTRs that Genecode annotation does not make. However, both should work fine.
 
-This pipeline can be applied to both human and mouse data, but the original ShortStop was trained with human data. For more information, please refere to the original ShortStop repository [here](https://github.com/brendan-miller-salk/ShortStop): 
+This pipeline can be applied to both human and mouse data. Keep in mind that the original ShortStop was trained with human data. For more information about this, please refere to the original ShortStop repository [here](https://github.com/brendan-miller-salk/ShortStop) and ShortStop paper [here](https://link.springer.com/article/10.1186/s44330-025-00037-4): 
 
 ### Genecode
 
@@ -42,8 +42,6 @@ gunzip Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 wget https://ftp.ensembl.org/pub/current_gtf/homo_sapiens/Homo_sapiens.GRCh38.115.gtf.gz
 gunzip Homo_sapiens.GRCh38.115.gtf.gz
 ```
-
-Then, we should download the proteome FASTA. 
 
 ### Proteome
 
