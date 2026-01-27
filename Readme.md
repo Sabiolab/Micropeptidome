@@ -1,15 +1,25 @@
 # Setup
-To download this repo, use:
+
+To download this pipeline, use:
 ```{}
 git clone https://github.com/SantiBarber/Micropeptidome.git
 cd Micropeptidome
 ```
+This pi[eline requires Snakemake to run. It is recommended to set up a conda enviroment with snakemake. To install
 
-Download a some files that the pipeline needs to run properly. I would recommend downloading the Ensembl GTF annotation and FASTA because, for smORF annotation later, those make a distinction between 5' and 3' UTRs. However, both should work fine.
+
+To learn more about conda, please visit the [Anaconda Webpage][https://anaconda.org/channels/anaconda/packages/conda/overview]
+```{}
+conda create -n snakemake -c conda-forge -c bioconda snakemake
+conda activate snakemake
+snakemake --version
+```
+
+Then, please download the references that the pipeline needs to run. I would recommend downloading the Ensembl GTF annotation and FASTA because, for smORF annotation later, those make a distinction between 5' and 3' UTRs. However, both should work fine.
 
 This pipeline can be applied to both human and mouse data, but the original ShortStop was trained with human data. For more information, please refere to the original ShortStop repository [here](https://github.com/brendan-miller-salk/ShortStop): 
 
-## Genecode
+### Genecode
 
 #### Genome.fa FASTA (GRCh38 primary assembly)
 ```{}
@@ -21,7 +31,7 @@ gunzip GRCh38.primary_assembly.genome.fa.gz
 wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_38/gencode.v38.primary_assembly.annotation.gtf.gz
 gunzip gencode.v38.primary_assembly.annotation.gtf.gz
 ```
-## Ensembl
+### Ensembl
 
 #### Genome FASTA (GRCh38 primary assembly, unmasked)
 ```{}
@@ -36,7 +46,7 @@ gunzip Homo_sapiens.GRCh38.115.gtf.gz
 
 Then, we should download the proteome FASTA. 
 
-## Proteome
+### Proteome
 
 #### Proteome.faa (FASTA)
 ```{}
