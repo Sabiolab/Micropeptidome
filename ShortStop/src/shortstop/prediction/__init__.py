@@ -1,1 +1,0 @@
-from .predict_smorfs import smORFPredictor 
