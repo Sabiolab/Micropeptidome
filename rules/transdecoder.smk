@@ -76,7 +76,6 @@ rule transdecoder_predict:
               "$td_dir/longest_orfs.cds.best_candidates.gff3.revised_starts.gff3"
 
         # Start-codon refinement is fragile on some transcript sets and can abort before
-        # writing the final .transdecoder.{gff3,pep} outputs. Skip it for workflow stability.
         TransDecoder.Predict \
           --no_refine_starts \
           -t "{input.fa}" \
