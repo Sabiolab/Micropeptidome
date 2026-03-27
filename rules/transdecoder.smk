@@ -59,28 +59,25 @@ rule transdecoder_predict:
         r"""
         set -euo pipefail
 
-        cd "{RESULTS_SHORTSTOP_DIR}/{wildcards.sample}/transcripts"
-        TransDecoder.Predict -t "{wildcards.sample}.transcripts.fa"
+        tx_dir="$(dirname "{input.fa}")"
+        tx_base="$(basename "{input.fa}")"
+        td_dir="$tx_dir/${{tx_base}}.transdecoder_dir"
 
-        # Some TransDecoder builds leave final outputs only inside the transdecoder_dir.
-        # Normalize to the filenames the downstream pipeline expects.
-        if [ ! -s "{wildcards.sample}.transcripts.fa.transdecoder.pep" ]; then
-          if [ -s "{wildcards.sample}.transcripts.fa.transdecoder_dir/longest_orfs.pep" ]; then
-            cp "{wildcards.sample}.transcripts.fa.transdecoder_dir/longest_orfs.pep" \
-               "{wildcards.sample}.transcripts.fa.transdecoder.pep"
-          fi
-        fi
+        # Remove stale Predict checkpoint state only
+        rm -rf "$td_dir/__checkpoints_TDpredict"
 
-        if [ ! -s "{wildcards.sample}.transcripts.fa.transdecoder.gff3" ]; then
-          if [ -s "{wildcards.sample}.transcripts.fa.transdecoder_dir/longest_orfs.cds.best_candidates.gff3.revised_starts.gff3" ]; then
-            cp "{wildcards.sample}.transcripts.fa.transdecoder_dir/longest_orfs.cds.best_candidates.gff3.revised_starts.gff3" \
-               "{wildcards.sample}.transcripts.fa.transdecoder.gff3"
-          elif [ -s "{wildcards.sample}.transcripts.fa.transdecoder_dir/longest_orfs.gff3" ]; then
-            cp "{wildcards.sample}.transcripts.fa.transdecoder_dir/longest_orfs.gff3" \
-               "{wildcards.sample}.transcripts.fa.transdecoder.gff3"
-          fi
-        fi
+        # Remove stale final outputs
+        rm -f "{output.pep}" "{output.gff3}" \
+              "$tx_dir/${{tx_base}}.transdecoder.cds" \
+              "$tx_dir/${{tx_base}}.transdecoder.bed"
 
-        test -s "{wildcards.sample}.transcripts.fa.transdecoder.pep"
-        test -s "{wildcards.sample}.transcripts.fa.transdecoder.gff3"
+        # Remove stale final-selection intermediates
+        rm -f "$td_dir/longest_orfs.cds.best_candidates.gff3" \
+              "$td_dir/longest_orfs.cds.best_candidates.gff3.revised_starts.gff3"
+
+        # Run Predict using absolute fasta path and explicit output directory
+        TransDecoder.Predict -t "{input.fa}" -O "$tx_dir"
+
+        test -s "{output.pep}"
+        test -s "{output.gff3}"
         """

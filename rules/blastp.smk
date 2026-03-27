@@ -15,6 +15,7 @@ rule make_human_proteome_blastdb:
         r"""
         set -euo pipefail
         mkdir -p "$(dirname "{params.db_prefix}")"
+        mkdir -p "$(dirname "{output.done}")"
 
         makeblastdb \
           -in "{input.fa}" \

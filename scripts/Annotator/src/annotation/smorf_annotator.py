@@ -34,9 +34,11 @@ class smORFAnnotator(PipelineStructure):
 
         with open(self.intersect_file, 'r') as file:
             for line in file:
-                if not line.startswith('chr'):
+                if not line.strip() or line.startswith('#'):
                     continue
                 parts = line.strip().split('\t')
+                if len(parts) < 18:
+                    continue
                 if parts[2] != 'CDS':
                     continue
 
@@ -107,9 +109,11 @@ class smORFAnnotator(PipelineStructure):
         # === Add Intergenic Genes ===
         with open(self.non_intersect_file, 'r') as file:
             for line in file:
-                if not line.startswith('chr'):
+                if not line.strip() or line.startswith('#'):
                     continue
                 parts = line.strip().split('\t')
+                if len(parts) < 9:
+                    continue
                 attrs = parse_attributes(parts[8])
                 gene_id = attrs.get('gene_id', 'Unknown')
                 if gene_id not in gene_data:

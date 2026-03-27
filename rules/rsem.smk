@@ -99,7 +99,7 @@ rule rsem_quant_smorf:
         runtime=600
     params:
         ref=RSEM_REF_PREFIX,
-        stranded=config.get("rsem_strandedness", "none")
+        stranded=config.get("strandedness", "none")
     conda:
         "../envs/RSEM.yaml"
     shell:

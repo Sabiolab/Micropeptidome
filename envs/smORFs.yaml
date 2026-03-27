@@ -20,7 +20,8 @@ dependencies:
   - scikit-learn
   - joblib
   - plotly
-  
+  - eli5
+
   # ShortStop ships a binary XGBoost model that requires XGBoost < 3.1.
   - conda-forge::xgboost<3.1
   - tensorflow=2.11.*

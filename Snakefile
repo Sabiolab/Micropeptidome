@@ -23,7 +23,12 @@ def bam_path(wc):
     return star_bam(wc.sample)
 
 RESULTS_SHORTSTOP_DIR = f"{OUTDIR}/results_shortstop"
-COHORT_PREFIX = config["cohort_prefix"]
+COHORT_PREFIX_RAW = str(config["cohort_prefix"])
+COHORT_PREFIX = (
+    COHORT_PREFIX_RAW
+    if Path(COHORT_PREFIX_RAW).is_absolute()
+    else str((Path(OUTDIR) / COHORT_PREFIX_RAW).resolve())
+)
 MIN_PATIENTS = int(config.get("min_patients", 2))
 MERGED_DIR = config.get("merged_dir", f"{OUTDIR}/merged_per_sample")
 RSEM_DIR = config.get("rsem_dir", f"{OUTDIR}/results_rsem_smorf")

@@ -54,20 +54,28 @@ rule star_align:
 
         tmpdir="{OUTDIR}/star/{wildcards.sample}.star_tmp"
         mkdir -p "$tmpdir"
+        sort_mem_mb=$(( ({resources.mem_mb} * 4 / 10) / {threads} ))
+        if [ "$sort_mem_mb" -lt 1024 ]; then
+          sort_mem_mb=1024
+        fi
 
-        # the flag --outSAMstrandField is required for StringTie later. Output MUST be sorted as well
+        # StringTie needs XS tags, but external sorting gives us explicit memory control.
         STAR \
           --runThreadN {threads} \
           --genomeDir "{STAR_INDEX_DIR}" \
           --readFilesIn "{input.r1}" "{input.r2}" \
           --readFilesCommand zcat \
           --outFileNamePrefix "$tmpdir/" \
-          --outSAMtype BAM SortedByCoordinate \
+          --outSAMtype BAM Unsorted \
           --outSAMstrandField intronMotif \
           --outSAMattributes All
 
-        # Rename STAR's default output to your canonical name
-        mv "$tmpdir/Aligned.sortedByCoord.out.bam" "{output.bam}"
+        samtools sort \
+          -@ {threads} \
+          -m "${{sort_mem_mb}}M" \
+          -T "$tmpdir/samtools_sort" \
+          -o "{output.bam}" \
+          "$tmpdir/Aligned.out.bam"
 
         # Index canonical BAM
         samtools index -@ {threads} "{output.bam}" "{output.bai}"

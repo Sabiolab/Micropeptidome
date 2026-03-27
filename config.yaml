@@ -19,11 +19,15 @@ star_index_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeli
 merged_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/merged_per_sample"
 rsem_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/results_rsem_smorf"  
 
-# RSEM
-rsem_strandedness: "reverse" # "none" or "forward"
+# STAR and RSEM
+mem_star_align_mb: 64000
+strandedness: "reverse" # "none" or "forward"
 
 # aggregation
 min_patients: 2 # Keep loci observed in at least this many patients
+
+# ShortStop
+min_prob: None
 
 # Threads
 threads_stringtie: 2
