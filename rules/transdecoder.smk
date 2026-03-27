@@ -75,8 +75,12 @@ rule transdecoder_predict:
         rm -f "$td_dir/longest_orfs.cds.best_candidates.gff3" \
               "$td_dir/longest_orfs.cds.best_candidates.gff3.revised_starts.gff3"
 
-        # Run Predict using absolute fasta path and explicit output directory
-        TransDecoder.Predict -t "{input.fa}" -O "$tx_dir"
+        # Start-codon refinement is fragile on some transcript sets and can abort before
+        # writing the final .transdecoder.{gff3,pep} outputs. Skip it for workflow stability.
+        TransDecoder.Predict \
+          --no_refine_starts \
+          -t "{input.fa}" \
+          -O "$tx_dir"
 
         test -s "{output.pep}"
         test -s "{output.gff3}"

@@ -17,12 +17,12 @@ class smORFAnnotator(PipelineStructure):
         self.output_file = args.output_file
 
     def process_gtf_files(self):
-        priority_order = ['psORF', 'uoORF', 'doORF', 'oORF', 'dORF', 'uORF', 'UTR_ORF', 'lncRNA', 'riORF', 'aORF', 'eORF']
+        priority_order = ['psORF', 'uoORF', 'doORF', 'udORF', 'oORF', 'dORF', 'uORF', 'UTR_ORF', 'lncRNA', 'riORF', 'aORF', 'eORF']
 
         def get_priority(annot):
             return priority_order.index(annot) if annot in priority_order else float('inf')
 
-        gene_data = defaultdict(lambda: ('UA', 'Unknown'))
+        gene_data = {}
 
         PSEUDO_BIOTYPES = {
             'processed_pseudogene', 'unprocessed_pseudogene', 'translated_unprocessed_pseudogene',
@@ -80,31 +80,32 @@ class smORFAnnotator(PipelineStructure):
                     annotation = 'UA'
 
                 # === Conflict Resolution ===
-                existing_annotation, _ = gene_data[gene_id]
-                
-                if gene_id not in gene_data:
+                existing = gene_data.get(gene_id)
+                if existing is None:
                     gene_data[gene_id] = (annotation, gene_name)
-                else:
-                    existing_annotation, _ = gene_data[gene_id]
+                    continue
 
-                    # Handle combined upstream + overlapping
-                    if {existing_annotation, annotation} == {'uORF', 'oORF'}:
-                        gene_data[gene_id] = ('uoORF', gene_name)
+                existing_annotation, existing_name = existing
+                resolved_annotation = existing_annotation
 
-                    # Handle combined downstream + overlapping
-                    elif {existing_annotation, annotation} == {'dORF', 'oORF'}:
-                        gene_data[gene_id] = ('doORF', gene_name)
+                # Handle combined upstream + overlapping
+                if {existing_annotation, annotation} == {'uORF', 'oORF'}:
+                    resolved_annotation = 'uoORF'
 
-                    # Handle upstream + downstream (rare)
-                    elif {existing_annotation, annotation} == {'uORF', 'dORF'}:
-                        gene_data[gene_id] = ('udORF', gene_name)
+                # Handle combined downstream + overlapping
+                elif {existing_annotation, annotation} == {'dORF', 'oORF'}:
+                    resolved_annotation = 'doORF'
 
-                    # Keep whichever has higher priority (lower index)
-                    elif get_priority(annotation) < get_priority(existing_annotation):
-                        gene_data[gene_id] = (annotation, gene_name)
-                
-                if get_priority(annotation) < get_priority(existing_annotation):
-                    gene_data[gene_id] = (annotation, gene_name)
+                # Handle upstream + downstream (rare)
+                elif {existing_annotation, annotation} == {'uORF', 'dORF'}:
+                    resolved_annotation = 'udORF'
+
+                # Keep whichever has higher priority (lower index)
+                elif get_priority(annotation) < get_priority(existing_annotation):
+                    resolved_annotation = annotation
+
+                resolved_name = gene_name if gene_name != 'Unnamed' else existing_name
+                gene_data[gene_id] = (resolved_annotation, resolved_name)
 
         # === Add Intergenic Genes ===
         with open(self.non_intersect_file, 'r') as file:
