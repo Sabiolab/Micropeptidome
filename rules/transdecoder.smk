@@ -45,7 +45,8 @@ rule transdecoder_longorfs:
 rule transdecoder_predict:
     input:
         fa=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transcripts/{{sample}}.transcripts.fa",
-        longorfs_done=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transdecoder/longorfs.done"
+        longorfs_done=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transdecoder/longorfs.done",
+        extract_pep_script=lambda wc: config["extract_transdecoder_pep_script"]
     output:
         pep=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transcripts/{{sample}}.transcripts.fa.transdecoder.pep",
         gff3=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transcripts/{{sample}}.transcripts.fa.transdecoder.gff3"
@@ -75,12 +76,29 @@ rule transdecoder_predict:
         rm -f "$td_dir/longest_orfs.cds.best_candidates.gff3" \
               "$td_dir/longest_orfs.cds.best_candidates.gff3.revised_starts.gff3"
 
+        predict_status=0
+
         # Start-codon refinement is fragile on some transcript sets and can abort before
         TransDecoder.Predict \
           --no_refine_starts \
           -t "{input.fa}" \
-          -O "$tx_dir"
+          -O "$tx_dir" \
+          || predict_status=$?
+
+        # TransDecoder can fail during its final peptide/CDS extraction step after
+        # already writing the selected final GFF3. If the GFF3 exists, we can still
+        # recover the peptide FASTA directly from that GFF3 and the transcript FASTA.
+        test -s "{output.gff3}"
+
+        python "{input.extract_pep_script}" \
+          --gff3 "{output.gff3}" \
+          --transcripts "{input.fa}" \
+          --out_pep "{output.pep}"
 
         test -s "{output.pep}"
         test -s "{output.gff3}"
+
+        if [ "$predict_status" -ne 0 ]; then
+          echo "TransDecoder.Predict exited with status $predict_status after producing final GFF3; peptide FASTA was regenerated from the GFF3." >&2
+        fi
         """
