@@ -11,10 +11,14 @@ To learn more about conda, please visit [Anaconda](https://anaconda.org/channels
 To download this pipeline, use:
 ```
 git clone https://github.com/SantiBarber/Micropeptidome.git
-cd Micropeptidome
 ```
 
-Then, please download the required proteome/genome references. Please find below a few examples. I would recommend downloading the Ensembl GTF annotation and FASTA since those make a distinction between 5' and 3' UTRs that Genecode annotation does not make. However, both should work fine.
+The work in progress version:
+```
+git clone --branch work_in_progress https://github.com/SantiBarber/Micropeptidome.git
+```
+
+Please download the required proteome/genome references. I would recommend downloading the Ensembl GTF annotation and FASTA since those make a distinction between 5' and 3' UTRs that Genecode annotation does not make. However, both should work fine. Please find below a few examples.
 
 This pipeline can be applied to both human and mouse data. Keep in mind that the original ShortStop was trained with human data. For more information about this, please refere to the original ShortStop repository [here](https://github.com/brendan-miller-salk/ShortStop) and ShortStop paper [here](https://link.springer.com/article/10.1186/s44330-025-00037-4).
 

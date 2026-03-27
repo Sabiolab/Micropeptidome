@@ -37,6 +37,7 @@ rule transdecoder_longorfs:
         mkdir -p "{RESULTS_SHORTSTOP_DIR}/{wildcards.sample}/transdecoder"
 
         cd "{RESULTS_SHORTSTOP_DIR}/{wildcards.sample}/transcripts"
+        rm -rf "{wildcards.sample}.transcripts.fa.transdecoder_dir"
         TransDecoder.LongOrfs -t "{wildcards.sample}.transcripts.fa"
 
         touch "../transdecoder/longorfs.done"
@@ -64,17 +65,10 @@ rule transdecoder_predict:
         tx_base="$(basename "{input.fa}")"
         td_dir="$tx_dir/${{tx_base}}.transdecoder_dir"
 
-        # Remove stale Predict checkpoint state only
-        rm -rf "$td_dir/__checkpoints_TDpredict"
-
         # Remove stale final outputs
         rm -f "{output.pep}" "{output.gff3}" \
               "$tx_dir/${{tx_base}}.transdecoder.cds" \
               "$tx_dir/${{tx_base}}.transdecoder.bed"
-
-        # Remove stale final-selection intermediates
-        rm -f "$td_dir/longest_orfs.cds.best_candidates.gff3" \
-              "$td_dir/longest_orfs.cds.best_candidates.gff3.revised_starts.gff3"
 
         predict_status=0
 

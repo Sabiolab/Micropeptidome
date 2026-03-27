@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import sys
 from collections import defaultdict
 
 from Bio import SeqIO
@@ -22,6 +23,10 @@ def load_transcripts(fasta_path: str) -> dict[str, Seq]:
     transcripts = {}
     for record in SeqIO.parse(fasta_path, "fasta"):
         transcripts[record.id] = record.seq
+        # Some tools decorate transcript identifiers with additional tokens. Keep a
+        # lightweight alias map so a plain seqid like STRG.10.4 can still resolve.
+        bare_id = record.id.split("|", 1)[0]
+        transcripts.setdefault(bare_id, record.seq)
     if not transcripts:
         raise ValueError(f"No transcript sequences found in {fasta_path}")
     return transcripts
@@ -102,6 +107,8 @@ def main() -> None:
 
     transcripts = load_transcripts(args.transcripts)
     orfs = load_orfs(args.gff3)
+    skipped_missing_tx = []
+    written = 0
 
     with open(args.out_pep, "w") as out_handle:
         for orf_id in sorted(orfs):
@@ -110,9 +117,8 @@ def main() -> None:
             cds_parts = orfs[orf_id]["cds_parts"]
 
             if transcript_id not in transcripts:
-                raise ValueError(
-                    f"Transcript {transcript_id} referenced by ORF {orf_id} is missing from {args.transcripts}"
-                )
+                skipped_missing_tx.append((orf_id, transcript_id))
+                continue
 
             cds_seq = extract_coding_sequence(transcripts[transcript_id], cds_parts, strand)
             pep_seq = cds_seq.translate(to_stop=False)
@@ -124,6 +130,21 @@ def main() -> None:
                 raise ValueError(f"Extracted empty peptide sequence for ORF {orf_id}")
 
             out_handle.write(f">{orf_id}\n{pep_text}\n")
+            written += 1
+
+    if skipped_missing_tx:
+        preview = ", ".join(f"{orf}->{tx}" for orf, tx in skipped_missing_tx[:10])
+        extra = "" if len(skipped_missing_tx) <= 10 else f" ... and {len(skipped_missing_tx) - 10} more"
+        print(
+            f"Warning: skipped {len(skipped_missing_tx)} ORFs whose transcript IDs were absent from {args.transcripts}: {preview}{extra}",
+            file=sys.stderr,
+        )
+
+    if written == 0:
+        raise ValueError(
+            f"No peptide sequences could be recovered from {args.gff3}; "
+            f"{len(skipped_missing_tx)} ORFs referenced transcripts absent from {args.transcripts}"
+        )
 
 
 if __name__ == "__main__":
