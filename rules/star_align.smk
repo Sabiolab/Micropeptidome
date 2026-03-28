@@ -41,7 +41,7 @@ rule star_align:
         bam=f"{OUTDIR}/star/{{sample}}.aligned.bam",
         bai=f"{OUTDIR}/star/{{sample}}.aligned.bam.bai",
         done=f"{OUTDIR}/star/{{sample}}.star_align.done"
-    threads: max(2, int(config.get("threads_star_align", 12)))
+    threads: max(2, int(config.get("threads_star_align", 8)))
     resources:
         mem_mb=int(config.get("mem_star_align_mb", 64000)),
         runtime=int(config.get("runtime_star_align_min", 360))

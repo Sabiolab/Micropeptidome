@@ -1,8 +1,8 @@
 # Paths
 units_csv: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/units_visceral.csv"
 cohort_prefix: "Visceral"
-genome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
-genome_gtf: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Homo_sapiens.GRCh38.115.gtf"
+genome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/GRCh38.primary_assembly.genome.fa"
+genome_gtf: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/gencode.v38.primary_assembly.annotation.gtf"
 
 # Helper scripts
 filter_smorf_pep_py: "scripts/filter_smorf_pep.py"
@@ -22,6 +22,7 @@ rsem_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Vis
 # STAR and RSEM
 mem_star_align_mb: 64000
 strandedness: "reverse" # "none" or "forward"
+threads_star_align: 8
 
 # aggregation
 min_patients: 2 # Keep loci observed in at least this many patients
