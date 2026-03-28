@@ -28,3 +28,6 @@ units_test.csv
 *.faa
 *.fa
 *.gtf
+
+# other 
+*.sh

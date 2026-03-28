@@ -25,6 +25,11 @@ rule filter_smorfs:
           --out_fasta "{output.smorfs_fa}" \
           --out_ids "{output.ids}"
 
+        if [ ! -s "{output.ids}" ]; then
+          echo "No smORFs remained for sample {wildcards.sample} after filtering TransDecoder peptides to the {config[min_aa]}-{config[max_aa]} aa range." >&2
+          exit 1
+        fi
+
         grep -F -f "{output.ids}" "{input.gff3}" > "{output.smorfs_gff3}"
 
         test -s "{output.smorfs_fa}"

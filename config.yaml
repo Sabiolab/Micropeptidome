@@ -12,7 +12,6 @@ aggregate_script: "scripts/aggregate_smorfs_by_locus.py"
 make_smorf_rsem_ref_script: "scripts/make_smorf_rsem_ref_from_locus_summary.py"
 add_rsem_tpms_script: "scripts/add_rsem_tpms_to_locus_summary.py"
 blastp_append_script: "scripts/blastp_append_human_homology.py"
-extract_transdecoder_pep_script: "scripts/extract_transdecoder_pep.py"
 
 # Output directories
 outdir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral"
@@ -35,9 +34,9 @@ threads_stringtie: 2
 threads_shortstop: 2
 threads_transdecoder: 2  # TransDecoder itself doesn't parallelize much, but kept for resource planning
 
-# smORF filter
-min_aa: 10
-max_aa: 150
+# smORF filter: TransDecoder.Predict smallest ORF is 100 aa, so anything below that is not going to be predicted.
+min_aa: 100
+max_aa: 200
 pred_csv: "sams.csv" # this is ALL SAMs, but we can also use "sam_secreted.csv" or "sam_intracellular.csv" 
 
 # BLASTP (human proteome homology)
