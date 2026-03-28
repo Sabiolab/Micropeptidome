@@ -11,7 +11,8 @@ rule merge_shortstop_output:
     params:
         root=RESULTS_SHORTSTOP_DIR,
         outdir=MERGED_DIR,
-        min_prob=config.get("min_prob", None)
+        min_prob=config.get("min_prob", None),
+        pred_csv=config.get("pred_csv", "sams.csv")
     conda:
         "../envs/smORFs.yaml"
     shell:
@@ -28,6 +29,7 @@ rule merge_shortstop_output:
           --root "{params.root}" \
           --outdir "{params.outdir}" \
           --samples "{wildcards.sample}" \
+          --pred_csv "{params.pred_csv}" \
           $MINPROB_ARGS
 
         test -s "{output.merged}"

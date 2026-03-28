@@ -1,13 +1,26 @@
+STRAND = config.get("strandedness", "none").lower()
+
+if STRAND not in {"none", "forward", "reverse"}:
+    raise ValueError(f"Invalid strandedness: {STRAND}")
+
+STRINGTIE_STRAND_FLAG = {
+    "none": "",
+    "forward": "--fr",
+    "reverse": "--rf",
+}[STRAND]
+
 rule stringtie_assemble:
     input:
         bam=bam_path,
-        ref_gtf=config["gencode_gtf"]
+        ref_gtf=config["genome_gtf"]
     output:
         gtf=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/stringtie/{{sample}}.gtf"
     threads: config.get("threads_stringtie", 8)
     resources:
         mem_mb=16000,
         runtime=120
+    params:
+        strand_flag=STRINGTIE_STRAND_FLAG
     conda:
         "../envs/smORFs.yaml"
     shell:
@@ -18,5 +31,6 @@ rule stringtie_assemble:
         stringtie "{input.bam}" \
           -G "{input.ref_gtf}" \
           -o "{output.gtf}" \
-          -p {threads}
+          -p {threads} \
+          {params.strand_flag}
         """

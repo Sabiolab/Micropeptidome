@@ -1,9 +1,8 @@
 # Paths
-units_csv: "units.csv"
-cohort_prefix: "Liver_summary"
-genome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Workdir/GRCh38.primary_assembly.genome.fa"
-gencode_gtf: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Workdir/gencode.v38.primary_assembly.annotation.gtf"
-ensembl_gtf: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Workdir/ensemlb_hg38_filtered.gtf"
+units_csv: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/units_visceral.csv"
+cohort_prefix: "Visceral"
+genome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/GRCh38.primary_assembly.genome.fa"
+genome_gtf: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/gencode.v38.primary_assembly.annotation.gtf"
 
 # Helper scripts
 filter_smorf_pep_py: "scripts/filter_smorf_pep.py"
@@ -15,27 +14,32 @@ add_rsem_tpms_script: "scripts/add_rsem_tpms_to_locus_summary.py"
 blastp_append_script: "scripts/blastp_append_human_homology.py"
 
 # Output directories
-outdir: "results"
-star_index_dir: "results/STAR_index"
-merged_dir: "results/merged_per_sample"
-rsem_dir: "results/results_rsem_smorf"  
+outdir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral"
+star_index_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/STAR_index"
+merged_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/merged_per_sample"
+rsem_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/results_rsem_smorf"  
 
-# RSEM
-rsem_strandedness: "none"
+# STAR and RSEM
+mem_star_align_mb: 64000
+strandedness: "reverse" # "none" or "forward"
+threads_star_align: 8
 
 # aggregation
-min_patients: 2
+min_patients: 2 # Keep loci observed in at least this many patients
+
+# ShortStop
+min_prob: None
 
 # Threads
 threads_stringtie: 2
 threads_shortstop: 2
 threads_transdecoder: 2  # TransDecoder itself doesn't parallelize much, but kept for resource planning
 
-# smORF filter
-min_aa: 10
-max_aa: 150
+# smORF filter: TransDecoder.Predict smallest ORF is 100 aa, so anything below that is not going to be predicted.
+min_aa: 100
+max_aa: 200
 pred_csv: "sams.csv" # this is ALL SAMs, but we can also use "sam_secreted.csv" or "sam_intracellular.csv" 
 
 # BLASTP (human proteome homology)
-human_proteome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Workdir/human_proteome.faa"
-human_blastdb_prefix: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Workdir/human_proteome"  # where DB files will be created and with what prefix
+human_proteome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/human_proteome.faa"
+human_blastdb_prefix: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/human_proteome"  # where DB files will be created and with what prefix

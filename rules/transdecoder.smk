@@ -60,26 +60,8 @@ rule transdecoder_predict:
         set -euo pipefail
 
         cd "{RESULTS_SHORTSTOP_DIR}/{wildcards.sample}/transcripts"
+
         TransDecoder.Predict -t "{wildcards.sample}.transcripts.fa"
-
-        # Some TransDecoder builds leave final outputs only inside the transdecoder_dir.
-        # Normalize to the filenames the downstream pipeline expects.
-        if [ ! -s "{wildcards.sample}.transcripts.fa.transdecoder.pep" ]; then
-          if [ -s "{wildcards.sample}.transcripts.fa.transdecoder_dir/longest_orfs.pep" ]; then
-            cp "{wildcards.sample}.transcripts.fa.transdecoder_dir/longest_orfs.pep" \
-               "{wildcards.sample}.transcripts.fa.transdecoder.pep"
-          fi
-        fi
-
-        if [ ! -s "{wildcards.sample}.transcripts.fa.transdecoder.gff3" ]; then
-          if [ -s "{wildcards.sample}.transcripts.fa.transdecoder_dir/longest_orfs.cds.best_candidates.gff3.revised_starts.gff3" ]; then
-            cp "{wildcards.sample}.transcripts.fa.transdecoder_dir/longest_orfs.cds.best_candidates.gff3.revised_starts.gff3" \
-               "{wildcards.sample}.transcripts.fa.transdecoder.gff3"
-          elif [ -s "{wildcards.sample}.transcripts.fa.transdecoder_dir/longest_orfs.gff3" ]; then
-            cp "{wildcards.sample}.transcripts.fa.transdecoder_dir/longest_orfs.gff3" \
-               "{wildcards.sample}.transcripts.fa.transdecoder.gff3"
-          fi
-        fi
 
         test -s "{wildcards.sample}.transcripts.fa.transdecoder.pep"
         test -s "{wildcards.sample}.transcripts.fa.transdecoder.gff3"

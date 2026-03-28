@@ -61,7 +61,7 @@ def load_smorf_types(gtf_path: Path) -> dict:
                 types.setdefault(gene_id, smorf_type)
     return types
 
-def merge_one_sample(sample_dir: Path, out_dir: Path, min_prob: float | None) -> Path:
+def merge_one_sample(sample_dir: Path, out_dir: Path, min_prob: float | None, pred_csv: str) -> Path:
     """
     sample_dir should contain:
       sample_dir/shortstop/shortstop_output/predictions/sams.csv
@@ -72,7 +72,7 @@ def merge_one_sample(sample_dir: Path, out_dir: Path, min_prob: float | None) ->
         / "shortstop"
         / "shortstop_output"
         / "predictions"
-        / "sams.csv"
+        / pred_csv
     )
     seq_path = (
         sample_dir
@@ -96,8 +96,8 @@ def merge_one_sample(sample_dir: Path, out_dir: Path, min_prob: float | None) ->
     pred["orf_id_clean"] = pred["orf_id"].map(clean_orf_id)
     seq["orf_id_clean"]  = seq["orf_id"].map(clean_orf_id)
 
-    if min_prob is not None and "probability" in pred.columns:
-        pred = pred[pred["probability"] >= min_prob].copy()
+    if min_prob is not None and "sam_probability" in pred.columns:
+        pred = pred[pred["sam_probability"] >= min_prob].copy()
 
     merged = pred.merge(
         seq,
@@ -137,7 +137,9 @@ def main():
     ap.add_argument("--outdir", required=True,
                     help="Where to write per-sample merged CSVs (e.g., merged_per_sample/)")
     ap.add_argument("--min_prob", type=float, default=None,
-                    help="Optional: keep only predictions with probability >= min_prob")
+                    help="Optional: keep only predictions with sam_probability >= min_prob")
+    ap.add_argument("--pred_csv", default="sams.csv",
+                    help="Predictions filename under shortstop_output/predictions/")
     ap.add_argument("--samples", nargs="*", default=None,
                     help="Optional: specific sample folder names to process (default: auto-discover)")
     args = ap.parse_args()
@@ -154,7 +156,7 @@ def main():
     ok = 0
     for sdir in sorted(samples):
         try:
-            out_path = merge_one_sample(sdir, outdir, args.min_prob)
+            out_path = merge_one_sample(sdir, outdir, args.min_prob, args.pred_csv)
             print(f"[OK] {sdir.name} -> {out_path}")
             ok += 1
         except Exception as e:
