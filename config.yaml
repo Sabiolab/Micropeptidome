@@ -34,9 +34,9 @@ min_prob: None
 threads_stringtie: 2
 threads_shortstop: 2
 
-# min_aa affects both TransDecoder.Predict and the filtering of the final SAM list.
-# keep in mind that smaller min_aa will increase runtime and may increase false positives.
-# recommended length is about 100
+# min_aa affects TD2.LongOrfs and the downstream peptide-length filtering step.
+# smaller values increase runtime and may increase false positives.
+# TD2 defaults to 90 aa if -m is not provided.
 min_aa: 50
 max_aa: 200
 pred_csv: "sams.csv" # this is ALL SAMs, but we can also use "sam_secreted.csv" or "sam_intracellular.csv" 

@@ -1,6 +1,6 @@
 #############################################
 # Snakefile: per-sample ShortStop workflow
-# Uses: StringTie, TransDecoder, ShortStop, 
+# Uses: StringTie, TD2, ShortStop,
 # BlastP, Dr. Brendan Miller's smORF annotator.
 #############################################
 

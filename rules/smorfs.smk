@@ -1,7 +1,7 @@
 rule filter_smorfs:
     input:
-        pep=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transcripts/{{sample}}.transcripts.fa.transdecoder.pep",
-        gff3=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transcripts/{{sample}}.transcripts.fa.transdecoder.gff3",
+        pep=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transcripts/{{sample}}.transcripts.fa.TD2.pep",
+        gff3=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transcripts/{{sample}}.transcripts.fa.TD2.gff3",
         script=config["filter_smorf_pep_py"]
     output:
         smorfs_fa=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/smorfs/{{sample}}.smorfs.fa",
@@ -26,7 +26,7 @@ rule filter_smorfs:
           --out_ids "{output.ids}"
 
         if [ ! -s "{output.ids}" ]; then
-          echo "No smORFs remained for sample {wildcards.sample} after filtering TransDecoder peptides to the {config[min_aa]}-{config[max_aa]} aa range." >&2
+          echo "No smORFs remained for sample {wildcards.sample} after filtering TD2 peptides to the {config[min_aa]}-{config[max_aa]} aa range." >&2
           exit 1
         fi
 
