@@ -43,6 +43,7 @@ threads_shortstop: 2
 runtime_gffread_min: 60
 runtime_transdecoder_longorfs_min: 360
 runtime_transdecoder_predict_min: 180
+runtime_shortstop_predict_min: 120
 
 # min_aa affects TD2.LongOrfs and the downstream peptide-length filtering step.
 # smaller values increase runtime and may increase false positives.

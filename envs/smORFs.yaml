@@ -43,3 +43,4 @@ dependencies:
   - umap-learn
   - pip:
       - TD2
+      - git+https://github.com/brendan-miller-salk/ShortStop.git
