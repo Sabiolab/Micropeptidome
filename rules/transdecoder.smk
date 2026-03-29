@@ -7,7 +7,7 @@ rule gffread_transcripts:
     threads: 1
     resources:
         mem_mb=8000,
-        runtime=60
+        runtime=int(config.get("runtime_gffread_min", 60))
     conda:
         "../envs/smORFs.yaml"
     shell:
@@ -30,7 +30,7 @@ rule transdecoder_longorfs:
         min_aa=config.get("min_aa", "100")
     resources:
         mem_mb=16000,
-        runtime=60
+        runtime=int(config.get("runtime_transdecoder_longorfs_min", 360))
     conda:
         "../envs/smORFs.yaml"
     shell:
@@ -54,7 +54,7 @@ rule transdecoder_predict:
     threads: 1
     resources:
         mem_mb=24000,
-        runtime=120
+        runtime=int(config.get("runtime_transdecoder_predict_min", 180))
     conda:
         "../envs/smORFs.yaml"
     shell:
