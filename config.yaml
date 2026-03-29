@@ -33,10 +33,11 @@ min_prob: None
 # Threads
 threads_stringtie: 2
 threads_shortstop: 2
-threads_transdecoder: 2  # TransDecoder itself doesn't parallelize much, but kept for resource planning
 
-# smORF filter: TransDecoder.Predict smallest ORF is 100 aa, so anything below that is not going to be predicted.
-min_aa: 100
+# min_aa affects both TransDecoder.Predict and the filtering of the final SAM list.
+# keep in mind that smaller min_aa will increase runtime and may increase false positives.
+# recommended length is about 100
+min_aa: 50
 max_aa: 200
 pred_csv: "sams.csv" # this is ALL SAMs, but we can also use "sam_secreted.csv" or "sam_intracellular.csv" 
 

@@ -30,6 +30,7 @@ rule filter_smorfs:
           exit 1
         fi
 
+        # This line can result in smaller than expected smORFs in the end
         grep -F -f "{output.ids}" "{input.gff3}" > "{output.smorfs_gff3}"
 
         test -s "{output.smorfs_fa}"
