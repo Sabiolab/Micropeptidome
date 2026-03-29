@@ -4,6 +4,10 @@ cohort_prefix: "Visceral"
 genome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/GRCh38.primary_assembly.genome.fa"
 genome_gtf: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/gencode.v38.primary_assembly.annotation.gtf"
 
+# BLASTP (human proteome homology)
+human_proteome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/human_proteome.faa"
+human_blastdb_prefix: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/human_proteome"  # where DB files will be created and with what prefix
+
 # Helper scripts
 filter_smorf_pep_py: "scripts/filter_smorf_pep.py"
 tx_to_genome_py: "scripts/smorfs_transcript_to_genome_gtf.py"
@@ -19,10 +23,11 @@ star_index_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeli
 merged_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/merged_per_sample"
 rsem_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/results_rsem_smorf"  
 
-# STAR and RSEM
+# STAR and RSEM. Keep in mind htat strandedness affects both STAR and RSEM parameters.
 mem_star_align_mb: 64000
 strandedness: "reverse" # "none" or "forward"
-threads_star_align: 8
+threads_star_align: 6
+threads_rsem_align: 6
 
 # aggregation
 min_patients: 2 # Keep loci observed in at least this many patients
@@ -40,7 +45,3 @@ threads_shortstop: 2
 min_aa: 50
 max_aa: 200
 pred_csv: "sams.csv" # this is ALL SAMs, but we can also use "sam_secreted.csv" or "sam_intracellular.csv" 
-
-# BLASTP (human proteome homology)
-human_proteome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/human_proteome.faa"
-human_blastdb_prefix: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/human_proteome"  # where DB files will be created and with what prefix
