@@ -48,6 +48,6 @@ runtime_shortstop_predict_min: 120
 # min_aa affects TD2.LongOrfs and the downstream peptide-length filtering step.
 # smaller values increase runtime and may increase false positives.
 # TD2 defaults to 90 aa if -m is not provided.
-min_aa: 50
-max_aa: 200
+min_aa: 30
+max_aa: 150
 pred_csv: "sams.csv" # this is ALL SAMs, but we can also use "sam_secreted.csv" or "sam_intracellular.csv" 
