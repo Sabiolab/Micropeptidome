@@ -31,3 +31,5 @@ units_test.csv
 
 # other 
 *.sh
+*.err
+*.out
