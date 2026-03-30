@@ -1,3 +1,24 @@
+rule install_shortstop:
+    input:
+        # Force reinstall if the environment spec changes (Snakemake hashes envs, but this
+        # marker file would otherwise prevent re-running in the new env).
+        env_spec="envs/smORFs.yaml"
+    output:
+        done=f"{OUTDIR}/.deps/shortstop_installed.done"
+    threads: 1
+    resources:
+        mem_mb=2000,
+        runtime=30
+    conda:
+        "../envs/smORFs.yaml"
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "{OUTDIR}/.deps"
+        python -m pip install --no-deps git+https://github.com/brendan-miller-salk/ShortStop.git
+        touch "{output.done}"
+        """
+
 rule shortstop_predict:
     input:
         genome=config["genome_fa"],

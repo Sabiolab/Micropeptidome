@@ -1,2 +1,0 @@
---no-deps
-git+https://github.com/brendan-miller-salk/ShortStop.git

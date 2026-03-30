@@ -42,6 +42,3 @@ dependencies:
   - umap-learn
   - pip:
       - TD2
-      # ShortStop currently depends on the obsolete PyPI package `umap==0.1.1`.
-      # Install it from a pip requirements file so `--no-deps` is interpreted by pip.
-      - "-r envs/shortstop-pip-requirements.txt"
