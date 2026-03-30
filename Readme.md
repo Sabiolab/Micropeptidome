@@ -111,4 +111,6 @@ conda clean --packages --tarballs -y
 
 Then, try again!
 
+If the failure happens while creating `envs/smORFs.yaml` and mentions `umap==0.1.1`, that comes from an upstream `ShortStop` pip dependency. This repository works around that by installing `umap-learn` from conda and installing `ShortStop` with `pip --no-deps`, so pull the latest version of this repo before rebuilding the environments.
+
 2. SLURM execution may be expressed as either `--slurm` or `--executor slurm` depending on snakemake version. If the first one does not work for you, try the second one.

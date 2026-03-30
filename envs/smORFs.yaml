@@ -40,7 +40,10 @@ dependencies:
   # Needed so pip + git install works reproducibly
   - pip
   - git
+  - td2
   - umap-learn
   - pip:
-      - TD2
+      # ShortStop currently depends on the obsolete PyPI package `umap==0.1.1`.
+      # We install compatible runtime deps via conda above and skip upstream pip deps.
+      - --no-deps
       - git+https://github.com/brendan-miller-salk/ShortStop.git
