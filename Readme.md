@@ -78,7 +78,7 @@ To change what ShortStop prediction to use, change `pred_csv: "sams.csv"` to `sa
 
 The "Annotator.py" script works better with Ensembl-style GTF annotations since those make a distinction between `five_prime_utr` and `three_prime_utr`. In Gencode annotations, there is no such distinction and both fall back to custom made `UTR_ORF` bucket. Regardless of which annotation you want to use, keep it consistent (specially if you are using that annotation for `STAR` alignment).
 
-StringTie takes the STAR-aligned BAM generated from FASTQs and uses it for transcript assembly using the GTF as a reference, but it also recosntructs transcripts that are not present in the reference when there is enugh transcriptomics evidence.
+StringTie takes the STAR-aligned BAM generated from FASTQs and uses it for transcript assembly using the GTF as a reference, but it also reconstructs transcripts that are not present in the reference when there is enough transcriptomic evidence. The pipeline pins StringTie to `3.0.3` and exposes `stringtie_rRNA` in `config.yaml`; set `stringtie_rRNA: true` to pass `-N` for Total RNA / rRNA-depleted libraries, and leave it `false` for polyA-selected libraries.
 
 RSEM quant is done on a different reference (the custom smORF transcriptome built by `rsem-prepare-reference --bowtie2`), so the pipeline alignes the FASTQs again with Bowtie2 to that smORF reference and feed the BAM into `rsem-calculate-expression --alignments`. We use bowtie2 because it is lighter for this task, it is built percisely for transcriptome alignment (whereas STAR has a genome-first mentality with splice awarenes that is not necesarily useful here) and STAR multi-mapping can be troublesom for short sequences.
 
