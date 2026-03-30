@@ -2,7 +2,7 @@ rule install_shortstop:
     input:
         # Force reinstall if the environment spec changes (Snakemake hashes envs, but this
         # marker file would otherwise prevent re-running in the new env).
-        env_spec="envs/smORFs.yaml"
+        env_spec="envs/shortstop.yaml"
     output:
         done=f"{OUTDIR}/.deps/shortstop_installed.done"
     threads: 1
@@ -10,7 +10,7 @@ rule install_shortstop:
         mem_mb=2000,
         runtime=30
     conda:
-        "../envs/smORFs.yaml"
+        "../envs/shortstop.yaml"
     shell:
         r"""
         set -euo pipefail
@@ -30,7 +30,7 @@ rule shortstop_predict:
         mem_mb=16000,
         runtime=int(config.get("runtime_shortstop_predict_min", 120))
     conda:
-        "../envs/smORFs.yaml"
+        "../envs/shortstop.yaml"
     shell:
         r"""
         set -euo pipefail

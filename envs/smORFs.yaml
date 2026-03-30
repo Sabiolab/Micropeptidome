@@ -10,35 +10,13 @@ dependencies:
   - gffread
   - samtools
 
-  # Python libs scripts use
+  # Core Python libs used by the pipeline scripts.
   - pandas
   - biopython
-  - matplotlib
-  - protlearn
-  - seaborn
-  - scikit-learn
-  - joblib
-  - plotly
-  - eli5
+  - matplotlib-base
 
-  # ShortStop ships a binary XGBoost model that requires XGBoost < 3.1.
-  - conda-forge::xgboost<3.1
-  - tensorflow-cpu=2.11.*
-
-  # Fixes for GLIBCXX / runtime issues
-  - libstdcxx-ng>=12
-  - libgcc-ng>=12
-
-  # Toolchain for building ShortStop's C extensions on HPC nodes
-  - compilers
-  - make
-  - sysroot_linux-64
-  - setuptools<81
-  - wheel
-
-  # Needed so pip + git install works reproducibly
+  # Needed so pip install of TD2 works reproducibly.
   - pip
   - git
-  - umap-learn
   - pip:
       - TD2
