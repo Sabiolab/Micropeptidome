@@ -23,8 +23,7 @@ dependencies:
 
   # ShortStop ships a binary XGBoost model that requires XGBoost < 3.1.
   - conda-forge::xgboost<3.1
-  - tensorflow=2.11.*
-  - keras=2.11.*
+  - tensorflow-cpu=2.11.*
 
   # Fixes for GLIBCXX / runtime issues
   - libstdcxx-ng>=12
@@ -40,9 +39,9 @@ dependencies:
   # Needed so pip + git install works reproducibly
   - pip
   - git
-  - td2
   - umap-learn
   - pip:
+      - TD2
       # ShortStop currently depends on the obsolete PyPI package `umap==0.1.1`.
       # We install compatible runtime deps via conda above and skip upstream pip deps.
       - --no-deps
