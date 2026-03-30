@@ -28,7 +28,7 @@ mem_star_align_mb: 64000
 strandedness: "reverse" # "none" or "forward"
 threads_star_align: 6
 threads_rsem_align: 6
-stringtie_rRNA: false # set true to pass -N to StringTie3 for Total RNA / rRNA-depleted libraries
+stringtie_rRNA: true # set true to pass -N to StringTie3 for Total RNA / rRNA-depleted libraries
 
 # aggregation
 min_patients: 2 # Keep loci observed in at least this many patients
