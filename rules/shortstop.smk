@@ -21,6 +21,7 @@ rule install_shortstop:
 
 rule shortstop_predict:
     input:
+        shortstop_installed=rules.install_shortstop.output.done,
         genome=config["genome_fa"],
         smorfs_gtf=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/shortstop/{{sample}}.smorfs_shortstop.gtf"
     output:
@@ -46,8 +47,12 @@ rule shortstop_predict:
         export NUMBA_CACHE_DIR="$cache_root/numba"
         export XDG_CACHE_HOME="$cache_root/xdg"
 
-        command -v shortstop >/dev/null 2>&1
-        python -c "import shortstop"
+        test -x "$CONDA_PREFIX/bin/shortstop" || {{
+          echo "ShortStop CLI not found in $CONDA_PREFIX/bin" >&2
+          python -m pip show ShortStop >&2 || true
+          exit 1
+        }}
+        python -c "import shortstop; print(shortstop.__file__)"
 
         "$CONDA_PREFIX/bin/shortstop" predict \
           --genome "{input.genome}" \
