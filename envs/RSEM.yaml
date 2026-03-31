@@ -7,3 +7,4 @@ dependencies:
   - rsem
   - bowtie2
   - samtools
+  - subread

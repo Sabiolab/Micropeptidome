@@ -89,4 +89,8 @@ rule all:
         f"{COHORT_PREFIX}.all_loci.with_tpms.csv",
         f"{COHORT_PREFIX}.shared_ge{MIN_PATIENTS}.with_tpms.csv",
         f"{COHORT_PREFIX}.all_loci.with_tpms.blastp_human.csv",
-        f"{COHORT_PREFIX}.shared_ge{MIN_PATIENTS}.with_tpms.blastp_human.csv"
+        f"{COHORT_PREFIX}.shared_ge{MIN_PATIENTS}.with_tpms.blastp_human.csv",
+        f"{COHORT_PREFIX}.all_loci.blastp_human.expected_counts.tsv",
+        f"{COHORT_PREFIX}.shared_ge{MIN_PATIENTS}.blastp_human.expected_counts.tsv",
+        f"{COHORT_PREFIX}.all_loci.blastp_human.featureCounts.matrix.tsv",
+        f"{COHORT_PREFIX}.all_loci.blastp_human.featureCounts.matrix.tsv.summary"

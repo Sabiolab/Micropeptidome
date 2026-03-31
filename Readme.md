@@ -86,6 +86,18 @@ Thus, those two BAMs are fundamentally different:
 STAR BAM: splice-aware alignments to the genome (for StringTie).
 Bowtie2 BAM: alignments to the smORF transcriptome reference (for RSEM quantification on smORFs).
 
+The pipeline also exports locus-by-sample matrices from the RSEM `expected_count` field:
+`<cohort>.all_loci.blastp_human.expected_counts.tsv`
+`<cohort>.shared_ge<N>.blastp_human.expected_counts.tsv`
+
+These are count-like RSEM expected counts for the loci present in the final BLAST-annotated summaries, not TPM values and not integer raw read counts.
+
+The pipeline can also build a locus-level `featureCounts` matrix from the genomic coordinates in the final BLAST-annotated locus summary using the STAR genome-aligned BAMs:
+`<cohort>.all_loci.blastp_human.featureCounts.matrix.tsv`
+`<cohort>.all_loci.blastp_human.featureCounts.matrix.tsv.summary`
+
+This rule derives a SAF annotation from the `locus`, `cds_chr`, `cds_starts`, `cds_ends`, and `cds_strand` columns and then runs `featureCounts` in paired-end mode on the STAR BAMs.
+
 
 ## Troubleshooting
 

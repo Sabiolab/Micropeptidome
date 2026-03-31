@@ -15,6 +15,8 @@ merge_script: "scripts/merge_shortstop_output.py"
 aggregate_script: "scripts/aggregate_smorfs_by_locus.py"
 make_smorf_rsem_ref_script: "scripts/make_smorf_rsem_ref_from_locus_summary.py"
 add_rsem_tpms_script: "scripts/add_rsem_tpms_to_locus_summary.py"
+export_rsem_counts_script: "scripts/export_rsem_counts_matrix.py"
+make_featurecounts_saf_script: "scripts/make_featurecounts_saf_from_locus_summary.py"
 blastp_append_script: "scripts/blastp_append_human_homology.py"
 
 # Output directories
