@@ -23,7 +23,8 @@ rule stringtie_assemble:
         runtime=120
     params:
         strand_flag=STRINGTIE_STRAND_FLAG,
-        nascent_flag=STRINGTIE_NASCENT_FLAG
+        nascent_flag=STRINGTIE_NASCENT_FLAG,
+        min_len_nt=(int(config["min_aa"]) + 1) * 3
     conda:
         "../envs/smORFs.yaml"
     shell:
@@ -36,5 +37,6 @@ rule stringtie_assemble:
           -o "{output.gtf}" \
           -p {threads} \
           {params.nascent_flag} \
-          {params.strand_flag}
+          {params.strand_flag} \
+          -m {params.min_len_nt}
         """
