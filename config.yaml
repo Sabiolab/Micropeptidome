@@ -1,6 +1,6 @@
 # Paths
-units_csv: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/units_visceral.csv"
-cohort_prefix: "Visceral"
+units_csv: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/units_liver.csv"
+cohort_prefix: "Liver"
 genome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/GRCh38.primary_assembly.genome.fa"
 genome_gtf: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/gencode.v38.primary_assembly.annotation.gtf"
 
@@ -19,9 +19,9 @@ export_rsem_counts_script: "scripts/export_rsem_counts_matrix.py"
 blastp_append_script: "scripts/blastp_append_human_homology.py"
 
 # Output directories
-outdir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral"
-merged_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/merged_per_sample"
-rsem_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/results_rsem_smorf"  
+outdir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver"
+merged_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/merged_per_sample"
+rsem_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/results_rsem_smorf"  
 
 # Alignment / assembly stack.
 # strandedness is shared across TopHat2, HISAT2/SuperReads, StringTie and RSEM.
