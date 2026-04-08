@@ -88,11 +88,11 @@ rule install_superreads_module:
           "{params.src_dir}"
 
         cd "{params.src_dir}/SuperReads_RNA"
-        M4_BIN="${CONDA_PREFIX:-}/bin/m4"
+        M4_BIN="${{CONDA_PREFIX:-}}/bin/m4"
         if [[ ! -x "$M4_BIN" ]]; then
           M4_BIN="$(command -v m4)"
         fi
-        if [[ -z "${M4_BIN:-}" || ! -x "$M4_BIN" ]]; then
+        if [[ -z "${{M4_BIN:-}}" || ! -x "$M4_BIN" ]]; then
           echo "GNU m4 was not found in the active SuperReads environment." >&2
           exit 1
         fi
