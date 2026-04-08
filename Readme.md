@@ -120,4 +120,6 @@ If the failure happens while creating `envs/smORFs.yaml` or `envs/shortstop.yaml
 
 If the failure happens while creating `envs/superreads.yaml`, note that the SuperReads helper is built from the official StringTie GitHub repository during the workflow. That step requires outbound GitHub access plus a compiler/autotools toolchain inside the environment.
 
+If `install_superreads_module` fails with an autotools error like `autom4te: need GNU m4 1.4 or later: /usr/bin/m4`, remove the failed SuperReads conda environment and rerun that rule so Snakemake rebuilds it with GNU `m4` available inside the env.
+
 2. SLURM execution may be expressed as either `--slurm` or `--executor slurm` depending on snakemake version. If the first one does not work for you, try the second one.
