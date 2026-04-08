@@ -122,4 +122,6 @@ If the failure happens while creating `envs/superreads.yaml`, note that the Supe
 
 If `install_superreads_module` fails with an autotools error like `autom4te: need GNU m4 1.4 or later: /usr/bin/m4`, remove the failed SuperReads conda environment and rerun that rule so Snakemake rebuilds it with GNU `m4` available inside the env.
 
+If `install_superreads_module` fails while configuring `global-1` with `Cannot find zlib.h header`, remove the failed SuperReads conda environment and rerun the rule so Snakemake rebuilds it with `zlib` headers available inside the env.
+
 2. SLURM execution may be expressed as either `--slurm` or `--executor slurm` depending on snakemake version. If the first one does not work for you, try the second one.

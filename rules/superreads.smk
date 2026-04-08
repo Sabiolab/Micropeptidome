@@ -101,6 +101,8 @@ rule install_superreads_module:
           exit 1
         fi
         export M4="$M4_BIN"
+        export CPPFLAGS="${{CPPFLAGS:-}} -I${{CONDA_PREFIX}}/include"
+        export LDFLAGS="${{LDFLAGS:-}} -L${{CONDA_PREFIX}}/lib"
         DEST="{params.install_dir}" ./install.sh
 
         test -x "{output.create_superreads}"
