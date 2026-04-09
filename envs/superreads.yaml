@@ -8,6 +8,7 @@ dependencies:
   - perl
   - m4
   - zlib
+  - bzip2
   - make
   - autoconf
   - automake

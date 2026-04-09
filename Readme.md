@@ -124,4 +124,6 @@ If `install_superreads_module` fails with an autotools error like `autom4te: nee
 
 If `install_superreads_module` fails while configuring `global-1` with `Cannot find zlib.h header`, remove the failed SuperReads conda environment and rerun the rule so Snakemake rebuilds it with `zlib` headers available inside the env.
 
+On newer Linux toolchains, the vendored Jellyfish code inside `SuperReads_RNA` can also fail with Perl `xlocale.h` errors or `std::numeric_limits<__int128>` redefinition errors. The workflow now patches the cloned upstream `configure.ac` before build to disable the unused Perl binding and detect modern libstdc++ support for `__int128`; if you hit those messages on an older checkout, update the repo and rerun `install_superreads_module`.
+
 2. SLURM execution may be expressed as either `--slurm` or `--executor slurm` depending on snakemake version. If the first one does not work for you, try the second one.

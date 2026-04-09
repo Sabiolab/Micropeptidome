@@ -87,6 +87,12 @@ rule install_superreads_module:
           "{params.repo}" \
           "{params.src_dir}"
 
+        CONFIGURE_AC="{params.src_dir}/SuperReads_RNA/global-1/configure.ac"
+        perl -0pi -e 's{AC_CHECK_TYPE\(\[__int128\],\n              \[AC_DEFINE\(\[HAVE_INT128\], \[1\], \[Define if type __int128 is supported\]\)\]\)\n\n# Check for openmp}{AC_CHECK_TYPE([__int128],\n              [AC_DEFINE([HAVE_INT128], [1], [Define if type __int128 is supported])])\n\nAC_MSG_CHECKING([for std::numeric_limits<__int128>])\nAC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <limits>]],\n                                   [[(void)std::numeric_limits<__int128>::max();]])],\n                  [AC_MSG_RESULT([yes])\n                   AC_DEFINE([HAVE_NUMERIC_LIMITS128], [1], [Define if std::numeric_limits<__int128> is supported])],\n                  [AC_MSG_RESULT([no])])\n\n# Check for openmp}sg' "$CONFIGURE_AC"
+        perl -0pi -e 's/AM_CONDITIONAL\(\[PERL_BINDING\], \[true\]\)/AM_CONDITIONAL([PERL_BINDING], [false])/g' "$CONFIGURE_AC"
+        grep -Fq 'HAVE_NUMERIC_LIMITS128' "$CONFIGURE_AC"
+        grep -Fq 'AM_CONDITIONAL([PERL_BINDING], [false])' "$CONFIGURE_AC"
+
         cd "{params.src_dir}/SuperReads_RNA"
         M4_BIN="${{CONDA_PREFIX:-}}/bin/m4"
         if [[ ! -x "$M4_BIN" ]]; then
