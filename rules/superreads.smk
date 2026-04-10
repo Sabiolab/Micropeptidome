@@ -1,7 +1,6 @@
 SUPERREADS_REPO = str(
     config.get("superreads_repo", "https://github.com/gpertea/stringtie.git")
 )
-SUPERREADS_REF = str(config.get("superreads_ref", "v3.0.3"))
 
 HISAT2_RNA_STRANDNESS = {
     "none": "",
@@ -58,18 +57,20 @@ rule gmap_genome_index:
         touch "{output.done}"
         """
 
+SUPERREADS_REPO = str(
+    config.get("superreads_repo", "https://github.com/gpertea/stringtie.git")
+)
 
 rule install_superreads_module:
     output:
-        done=f"{SUPERREADS_INSTALL_DIR}/tools/.installed.done",
-        create_superreads=f"{SUPERREADS_INSTALL_DIR}/tools/bin/createSuperReads_RNA",
-        assign_reads=f"{SUPERREADS_INSTALL_DIR}/tools/bin/assign_reads"
+        done=f"{SUPERREADS_INSTALL_DIR}/.installed.done",
+        create_rna_sr=f"{SUPERREADS_INSTALL_DIR}/SuperReads_RNA/create_rna_sr.py",
+        bin_dir_sentinel=f"{SUPERREADS_INSTALL_DIR}/SuperReads_RNA/bin/createSuperReads_RNA"
     params:
         repo=SUPERREADS_REPO,
-        ref=SUPERREADS_REF,
-        src_dir=f"{SUPERREADS_INSTALL_DIR}/src",
-        install_dir=f"{SUPERREADS_INSTALL_DIR}/tools"
-    threads: 1
+        src_dir=SUPERREADS_INSTALL_DIR,
+        sr_dir=f"{SUPERREADS_INSTALL_DIR}/SuperReads_RNA"
+    threads: 4
     resources:
         mem_mb=int(config.get("mem_superreads_install_mb", 16000)),
         runtime=int(config.get("runtime_superreads_install_min", 240))
@@ -78,55 +79,29 @@ rule install_superreads_module:
     shell:
         r"""
         set -euo pipefail
-        rm -rf "{params.src_dir}" "{params.install_dir}"
-        mkdir -p "{SUPERREADS_INSTALL_DIR}"
+        mkdir -p "{params.src_dir}"
 
-        git clone \
-          --branch "{params.ref}" \
-          --depth 1 \
-          "{params.repo}" \
-          "{params.src_dir}"
-
-        CONFIGURE_AC="{params.src_dir}/SuperReads_RNA/global-1/configure.ac"
-        perl -0pi -e 's{AC_CHECK_TYPE\(\[__int128\],\n              \[AC_DEFINE\(\[HAVE_INT128\], \[1\], \[Define if type __int128 is supported\]\)\]\)\n\n# Check for openmp}{AC_CHECK_TYPE([__int128],\n              [AC_DEFINE([HAVE_INT128], [1], [Define if type __int128 is supported])])\n\nAC_MSG_CHECKING([for std::numeric_limits<__int128>])\nAC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <limits>]],\n                                   [[(void)std::numeric_limits<__int128>::max();]])],\n                  [AC_MSG_RESULT([yes])\n                   AC_DEFINE([HAVE_NUMERIC_LIMITS128], [1], [Define if std::numeric_limits<__int128> is supported])],\n                  [AC_MSG_RESULT([no])])\n\n# Check for openmp}sg' "$CONFIGURE_AC"
-        perl -0pi -e 's/AM_CONDITIONAL\(\[PERL_BINDING\], \[true\]\)/AM_CONDITIONAL([PERL_BINDING], [false])/g' "$CONFIGURE_AC"
-        grep -Fq 'HAVE_NUMERIC_LIMITS128' "$CONFIGURE_AC"
-        grep -Fq 'AM_CONDITIONAL([PERL_BINDING], [false])' "$CONFIGURE_AC"
-
-        cd "{params.src_dir}/SuperReads_RNA"
-        M4_BIN="${{CONDA_PREFIX:-}}/bin/m4"
-        if [[ ! -x "$M4_BIN" ]]; then
-          M4_BIN="$(command -v m4)"
+        if [ ! -d "{params.src_dir}/.git" ]; then
+            git clone \
+              "{params.repo}" \
+              "{params.src_dir}"
         fi
-        if [[ -z "${{M4_BIN:-}}" || ! -x "$M4_BIN" ]]; then
-          echo "GNU m4 was not found in the active SuperReads environment." >&2
-          exit 1
-        fi
-        if ! "$M4_BIN" --version | grep -q "GNU M4"; then
-          echo "Expected GNU m4 for SuperReads install, but got: $M4_BIN" >&2
-          exit 1
-        fi
-        export M4="$M4_BIN"
-        export CPPFLAGS="${{CPPFLAGS:-}} -I${{CONDA_PREFIX}}/include"
-        export LDFLAGS="${{LDFLAGS:-}} -L${{CONDA_PREFIX}}/lib"
-        DEST="{params.install_dir}" ./install.sh
 
-        test -x "{output.create_superreads}"
-        test -x "{output.assign_reads}"
+        cd "{params.sr_dir}"
+        ./install.sh
+
+        test -f "{output.create_rna_sr}"
+        test -x "{output.bin_dir_sentinel}"
         touch "{output.done}"
         """
-
 
 rule run_superreads:
     input:
         r1=trimmed_fastq_r1,
         r2=trimmed_fastq_r2,
         install_done=rules.install_superreads_module.output.done,
-        create_superreads=rules.install_superreads_module.output.create_superreads,
-        assign_reads=rules.install_superreads_module.output.assign_reads,
         hisat_index=f"{SUPERREADS_HISAT2_INDEX_PREFIX}.1.ht2",
         gmap_done=f"{SUPERREADS_GMAP_DIR}/{SUPERREADS_GMAP_NAME}.done",
-        script="scripts/run_superreads.py"
     output:
         bam=f"{SUPERREADS_DIR}/{{sample}}/sr_merge.bam",
         bai=f"{SUPERREADS_DIR}/{{sample}}/sr_merge.bam.bai"
@@ -135,34 +110,32 @@ rule run_superreads:
         mem_mb=int(config.get("mem_superreads_mb", 32000)),
         runtime=int(config.get("runtime_superreads_min", 1440))
     params:
-        install_dir=f"{SUPERREADS_INSTALL_DIR}/tools",
         outdir=lambda wc: f"{SUPERREADS_DIR}/{wc.sample}",
         hisat_index=SUPERREADS_HISAT2_INDEX_PREFIX,
         gmap_dir=SUPERREADS_GMAP_DIR,
         gmap_name=SUPERREADS_GMAP_NAME,
         frag_len=float(config.get("superreads_frag_len", 100)),
         frag_std=float(config.get("superreads_frag_std", 20)),
-        hisat_rna_strandness=HISAT2_RNA_STRANDNESS
+        script=f"{SUPERREADS_INSTALL_DIR}/SuperReads_RNA/create_rna_sr.py",
+        sr_bin=f"{SUPERREADS_INSTALL_DIR}/SuperReads_RNA/bin"
     conda:
         "../envs/superreads.yaml"
     shell:
         r"""
         set -euo pipefail
+        export PATH="{params.sr_bin}:$PATH"
         mkdir -p "{params.outdir}"
 
-        python "{input.script}" \
-          --read1 "{input.r1}" \
-          --read2 "{input.r2}" \
-          --install-dir "{params.install_dir}" \
-          --hisat-index "{params.hisat_index}" \
-          --gmap-dir "{params.gmap_dir}" \
-          --gmap-index "{params.gmap_name}" \
-          --outdir "{params.outdir}" \
-          --bam-out "{output.bam}" \
-          --threads {threads} \
+        python "{params.script}" \
+          -1 "{input.r1}" \
+          -2 "{input.r2}" \
+          -H "{params.hisat_index}" \
+          -G "{params.gmap_name}" \
+          -g "{params.gmap_dir}" \
+          -o "{params.outdir}" \
+          -p {threads} \
           --frag-len {params.frag_len} \
-          --frag-std {params.frag_std} \
-          --hisat-rna-strandness "{params.hisat_rna_strandness}"
+          --frag-std {params.frag_std}
 
         test -s "{output.bam}"
         test -s "{output.bai}"
