@@ -1,0 +1,21 @@
+name: superreads
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.10
+  - git
+  - perl
+  - m4
+  - zlib
+  - bzip2
+  - make
+  - autoconf
+  - automake
+  - libtool
+  - pkg-config
+  - c-compiler
+  - cxx-compiler
+  - hisat2
+  - gmap
+  - samtools

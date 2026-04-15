@@ -9,6 +9,8 @@ STRINGTIE_STRAND_FLAG = {
     "reverse": "--rf",
 }[STRAND]
 
+STRINGTIE_NASCENT_FLAG = "-N" if config.get("stringtie_rRNA", False) else ""
+
 rule stringtie_assemble:
     input:
         bam=bam_path,
@@ -20,7 +22,9 @@ rule stringtie_assemble:
         mem_mb=16000,
         runtime=120
     params:
-        strand_flag=STRINGTIE_STRAND_FLAG
+        strand_flag=STRINGTIE_STRAND_FLAG,
+        nascent_flag=STRINGTIE_NASCENT_FLAG,
+        min_len_nt=(int(config["min_aa"]) + 1) * 3
     conda:
         "../envs/smORFs.yaml"
     shell:
@@ -32,5 +36,7 @@ rule stringtie_assemble:
           -G "{input.ref_gtf}" \
           -o "{output.gtf}" \
           -p {threads} \
-          {params.strand_flag}
+          {params.nascent_flag} \
+          {params.strand_flag} \
+          -m {params.min_len_nt}
         """

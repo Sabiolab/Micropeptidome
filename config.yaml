@@ -1,8 +1,12 @@
 # Paths
-units_csv: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/units_visceral.csv"
-cohort_prefix: "Visceral"
+units_csv: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/units_liver.csv"
+cohort_prefix: "Liver"
 genome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/GRCh38.primary_assembly.genome.fa"
 genome_gtf: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/gencode.v38.primary_assembly.annotation.gtf"
+
+# BLASTP (human proteome homology)
+human_proteome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/human_proteome.faa"
+human_blastdb_prefix: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/human_proteome"  # where DB files will be created and with what prefix
 
 # Helper scripts
 filter_smorf_pep_py: "scripts/filter_smorf_pep.py"
@@ -11,18 +15,53 @@ merge_script: "scripts/merge_shortstop_output.py"
 aggregate_script: "scripts/aggregate_smorfs_by_locus.py"
 make_smorf_rsem_ref_script: "scripts/make_smorf_rsem_ref_from_locus_summary.py"
 add_rsem_tpms_script: "scripts/add_rsem_tpms_to_locus_summary.py"
+export_rsem_counts_script: "scripts/export_rsem_counts_matrix.py"
 blastp_append_script: "scripts/blastp_append_human_homology.py"
 
 # Output directories
-outdir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral"
-star_index_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/STAR_index"
-merged_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/merged_per_sample"
-rsem_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Visceral/results_rsem_smorf"  
+outdir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver"
+merged_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/merged_per_sample"
+rsem_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/results_rsem_smorf"  
 
-# STAR and RSEM
-mem_star_align_mb: 64000
-strandedness: "reverse" # "none" or "forward"
-threads_star_align: 8
+# Alignment / assembly stack.
+# strandedness is shared across TopHat2, HISAT2/SuperReads, StringTie and RSEM.
+# "forward" corresponds to TopHat2 fr-secondstrand / HISAT2 FR / StringTie --fr.
+# "reverse" corresponds to TopHat2 fr-firststrand / HISAT2 RF / StringTie --rf.
+strandedness: "reverse" # "none", "forward", or "reverse"
+stringtie_bam_source: "superreads" # "superreads" or "tophat"
+
+# Trim Galore
+threads_trim_galore: 4
+mem_trim_galore_mb: 8000
+runtime_trim_galore_min: 180
+
+# TopHat2
+threads_tophat_index: 4
+mem_tophat_index_mb: 32000
+runtime_tophat_index_min: 360
+threads_tophat_align: 6
+mem_tophat_align_mb: 64000
+runtime_tophat_align_min: 720
+tophat_mate_inner_dist: 50
+tophat_mate_std_dev: 20
+
+# StringTie SuperReads helper
+superreads_repo: "https://github.com/gpertea/stringtie.git"
+superreads_ref: "v3.0.3"
+threads_superreads_index: 4
+mem_superreads_index_mb: 32000
+runtime_superreads_index_min: 360
+threads_superreads: 6
+mem_superreads_mb: 64000
+runtime_superreads_min: 1440
+mem_superreads_install_mb: 16000
+runtime_superreads_install_min: 240
+superreads_frag_len: 100
+superreads_frag_std: 20
+
+# RSEM
+threads_rsem_align: 6
+stringtie_rRNA: true # set true to pass -N to StringTie3 for Total RNA / rRNA-depleted libraries
 
 # aggregation
 min_patients: 2 # Keep loci observed in at least this many patients
@@ -33,13 +72,16 @@ min_prob: None
 # Threads
 threads_stringtie: 2
 threads_shortstop: 2
-threads_transdecoder: 2  # TransDecoder itself doesn't parallelize much, but kept for resource planning
 
-# smORF filter: TransDecoder.Predict smallest ORF is 100 aa, so anything below that is not going to be predicted.
-min_aa: 100
-max_aa: 200
+# Runtime in minutes
+runtime_gffread_min: 60
+runtime_transdecoder_longorfs_min: 360
+runtime_transdecoder_predict_min: 180
+runtime_shortstop_predict_min: 120
+
+# min_aa affects TD2.LongOrfs and the downstream peptide-length filtering step.
+# smaller values increase runtime and may increase false positives.
+# TD2 defaults to 90 aa if -m is not provided.
+min_aa: 30
+max_aa: 150
 pred_csv: "sams.csv" # this is ALL SAMs, but we can also use "sam_secreted.csv" or "sam_intracellular.csv" 
-
-# BLASTP (human proteome homology)
-human_proteome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/human_proteome.faa"
-human_blastdb_prefix: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/human_proteome"  # where DB files will be created and with what prefix

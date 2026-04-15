@@ -50,8 +50,8 @@ rule rsem_prepare_smorf_reference:
 
 rule rsem_align_smorf_bowtie2:
     input:
-        r1=fastq_r1,
-        r2=fastq_r2,
+        r1=trimmed_fastq_r1,
+        r2=trimmed_fastq_r2,
         ref_done=f"{RSEM_REF_DIR}/rsem_ref.done"
     output:
         bam=f"{RSEM_DIR}/{{sample}}/{{sample}}.bowtie2.bam",
@@ -143,4 +143,46 @@ rule add_rsem_tpms_to_locus_summary:
           --rsem_dir "{RSEM_DIR}" \
           --out_all_loci_csv "{output.all_loci_tpm}" \
           --out_shared_csv "{output.shared_tpm}"
+        """
+
+rule export_rsem_expected_counts_all_loci:
+    input:
+        loci_csv=f"{COHORT_PREFIX}.all_loci.with_tpms.blastp_human.csv",
+        rsem_isoforms=expand(f"{RSEM_DIR}/{{sample}}/{{sample}}.isoforms.results", sample=SAMPLES),
+        script=lambda wc: config["export_rsem_counts_script"]
+    output:
+        matrix_tsv=f"{COHORT_PREFIX}.all_loci.blastp_human.expected_counts.tsv"
+    threads: 1
+    resources:
+        mem_mb=16000
+    conda:
+        "../envs/smORFs.yaml"
+    shell:
+        r"""
+        set -euo pipefail
+        python "{input.script}" \
+          --loci_csv "{input.loci_csv}" \
+          --rsem_dir "{RSEM_DIR}" \
+          --out_tsv "{output.matrix_tsv}"
+        """
+
+rule export_rsem_expected_counts_shared_loci:
+    input:
+        loci_csv=f"{COHORT_PREFIX}.shared_ge{MIN_PATIENTS}.with_tpms.blastp_human.csv",
+        rsem_isoforms=expand(f"{RSEM_DIR}/{{sample}}/{{sample}}.isoforms.results", sample=SAMPLES),
+        script=lambda wc: config["export_rsem_counts_script"]
+    output:
+        matrix_tsv=f"{COHORT_PREFIX}.shared_ge{MIN_PATIENTS}.blastp_human.expected_counts.tsv"
+    threads: 2
+    resources:
+        mem_mb=16000
+    conda:
+        "../envs/smORFs.yaml"
+    shell:
+        r"""
+        set -euo pipefail
+        python "{input.script}" \
+          --loci_csv "{input.loci_csv}" \
+          --rsem_dir "{RSEM_DIR}" \
+          --out_tsv "{output.matrix_tsv}"
         """

@@ -1,10 +1,9 @@
-name: RSEM
+name: tophat
 channels:
   - conda-forge
   - bioconda
 dependencies:
   - python=3.10
-  - rsem
+  - tophat
   - bowtie2
   - samtools
-  - subread

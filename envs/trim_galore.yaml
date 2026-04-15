@@ -1,10 +1,7 @@
-name: RSEM
+name: trim_galore
 channels:
   - conda-forge
   - bioconda
 dependencies:
   - python=3.10
-  - rsem
-  - bowtie2
-  - samtools
-  - subread
+  - trim-galore
