@@ -27,7 +27,7 @@ rule transdecoder_longorfs:
         done=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transdecoder/longorfs.done"
     threads: 1
     params:
-        min_aa=config.get("min_aa", "100")
+        min_aa=config.get("min_aa", "30")
     resources:
         mem_mb=16000,
         runtime=int(config.get("runtime_transdecoder_longorfs_min", 360))
