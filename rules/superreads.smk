@@ -1,6 +1,7 @@
 SUPERREADS_REPO = str(
     config.get("superreads_repo", "https://github.com/gpertea/stringtie.git")
 )
+SUPERREADS_REF = str(config.get("superreads_ref", "v3.0.3"))
 
 HISAT2_RNA_STRANDNESS = {
     "none": "",
@@ -57,10 +58,6 @@ rule gmap_genome_index:
         touch "{output.done}"
         """
 
-SUPERREADS_REPO = str(
-    config.get("superreads_repo", "https://github.com/gpertea/stringtie.git")
-)
-
 rule install_superreads_module:
     output:
         done=f"{SUPERREADS_INSTALL_DIR}/.installed.done",
@@ -68,8 +65,11 @@ rule install_superreads_module:
         bin_dir_sentinel=f"{SUPERREADS_INSTALL_DIR}/SuperReads_RNA/bin/createSuperReads_RNA"
     params:
         repo=SUPERREADS_REPO,
+        ref=SUPERREADS_REF,
         src_dir=SUPERREADS_INSTALL_DIR,
-        sr_dir=f"{SUPERREADS_INSTALL_DIR}/SuperReads_RNA"
+        sr_dir=f"{SUPERREADS_INSTALL_DIR}/SuperReads_RNA",
+        install_log=f"{SUPERREADS_INSTALL_DIR}/SuperReads_RNA/install.log",
+        patch_script=str(Path(workflow.basedir) / "scripts" / "patch_superreads_source.py")
     threads: 4
     resources:
         mem_mb=int(config.get("mem_superreads_install_mb", 16000)),
@@ -79,19 +79,65 @@ rule install_superreads_module:
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{params.src_dir}"
 
-        if [ ! -d "{params.src_dir}/.git" ]; then
+        if [ -d "{params.src_dir}/.git" ]; then
+            git -C "{params.src_dir}" fetch --tags --force
+            git -C "{params.src_dir}" checkout "{params.ref}"
+            git -C "{params.src_dir}" reset --hard "{params.ref}"
+            git -C "{params.src_dir}" clean -fdx
+        elif [ -f "{params.sr_dir}/install.sh" ]; then
+            echo "Using existing SuperReads_RNA source tree at {params.sr_dir}"
+        else
+            if [ -d "{params.src_dir}" ] && [ -n "$(find "{params.src_dir}" -mindepth 1 -maxdepth 1 -print -quit)" ]; then
+                partial_dir="{params.src_dir}.partial.$(date +%Y%m%d%H%M%S).$$"
+                echo "Moving incomplete SuperReads dependency directory to $partial_dir" >&2
+                mv "{params.src_dir}" "$partial_dir"
+            fi
             git clone \
               "{params.repo}" \
               "{params.src_dir}"
+            git -C "{params.src_dir}" checkout "{params.ref}"
+        fi
+
+        python "{params.patch_script}" "{params.sr_dir}"
+
+        if [ -n "${{CONDA_PREFIX:-}}" ]; then
+            export PATH="${{CONDA_PREFIX}}/bin:$PATH"
+            if [ -x "${{CONDA_PREFIX}}/bin/m4" ]; then
+                export M4="${{CONDA_PREFIX}}/bin/m4"
+            fi
+        fi
+
+        m4_path="$(command -v m4 || true)"
+        m4_version="$(m4 --version 2>/dev/null | head -n 1 || true)"
+        if ! printf "%s\n" "$m4_version" | grep -qi "GNU M4"; then
+            echo "ERROR: SuperReads build requires GNU m4 >= 1.4 from the Snakemake conda env." >&2
+            echo "Resolved m4: ${{m4_path:-not found}}" >&2
+            echo "m4 version: ${{m4_version:-unavailable}}" >&2
+            echo "CONDA_PREFIX: ${{CONDA_PREFIX:-unset}}" >&2
+            echo "Remove the stale SuperReads conda env and rerun so Snakemake rebuilds envs/superreads.yaml." >&2
+            exit 1
         fi
 
         cd "{params.sr_dir}"
-        ./install.sh
+        if ! ./install.sh > "{params.install_log}" 2>&1; then
+            echo "ERROR: SuperReads install.sh failed. Full log: {params.install_log}" >&2
+            echo "----- install.log tail -----" >&2
+            tail -n 200 "{params.install_log}" >&2 || true
+            echo "----------------------------" >&2
+            exit 1
+        fi
 
-        test -f "{output.create_rna_sr}"
-        test -x "{output.bin_dir_sentinel}"
+        if [ ! -f "{output.create_rna_sr}" ]; then
+            echo "ERROR: install.sh completed but did not create {output.create_rna_sr}" >&2
+            echo "Full log: {params.install_log}" >&2
+            exit 1
+        fi
+        if [ ! -x "{output.bin_dir_sentinel}" ]; then
+            echo "ERROR: install.sh completed but did not create executable {output.bin_dir_sentinel}" >&2
+            echo "Full log: {params.install_log}" >&2
+            exit 1
+        fi
         touch "{output.done}"
         """
 

@@ -120,10 +120,12 @@ If the failure happens while creating `envs/smORFs.yaml` or `envs/shortstop.yaml
 
 If the failure happens while creating `envs/superreads.yaml`, note that the SuperReads helper is built from the official StringTie GitHub repository during the workflow. That step requires outbound GitHub access plus a compiler/autotools toolchain inside the environment.
 
-If `install_superreads_module` fails with an autotools error like `autom4te: need GNU m4 1.4 or later: /usr/bin/m4`, remove the failed SuperReads conda environment and rerun that rule so Snakemake rebuilds it with GNU `m4` available inside the env.
+If `install_superreads_module` fails with an autotools error like `autom4te: need GNU m4 1.4 or later: /usr/bin/m4`, the cluster is using the system `m4` instead of the conda one. The rule prepends `$CONDA_PREFIX/bin` and exports `M4` when possible; if it still reports a non-GNU `m4`, remove the failed SuperReads conda environment and rerun that rule so Snakemake rebuilds `envs/superreads.yaml`.
 
 If `install_superreads_module` fails while configuring `global-1` with `Cannot find zlib.h header`, remove the failed SuperReads conda environment and rerun the rule so Snakemake rebuilds it with `zlib` headers available inside the env.
 
-On newer Linux toolchains, the vendored Jellyfish code inside `SuperReads_RNA` can also fail with Perl `xlocale.h` errors or `std::numeric_limits<__int128>` redefinition errors. The workflow now patches the cloned upstream `configure.ac` before build to disable the unused Perl binding and detect modern libstdc++ support for `__int128`; if you hit those messages on an older checkout, update the repo and rerun `install_superreads_module`.
+If `install_superreads_module` finds that `.deps/superreads` already exists but is not a git checkout and does not contain `SuperReads_RNA/install.sh`, it moves that incomplete dependency directory aside as `.deps/superreads.partial.<timestamp>.<pid>` and clones a clean checkout. The install rule can also reuse a complete existing checkout.
+
+On newer Linux toolchains, the vendored Jellyfish code inside `SuperReads_RNA` can also fail with Perl `xlocale.h` errors, `std::numeric_limits<__int128>` redefinition errors, or missing `uint64_t` declarations from `SuperReadsR/include/misc.hpp`. The workflow patches the cloned upstream source before build to disable the unused SWIG/Perl binding, avoid redefining libstdc++'s `__int128` limits, and include `<cstdint>` where needed.
 
 2. SLURM execution may be expressed as either `--slurm` or `--executor slurm` depending on snakemake version. If the first one does not work for you, try the second one.
