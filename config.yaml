@@ -1,5 +1,6 @@
 # Paths
 units_csv: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/units_liver.csv"
+sample_metadata_tsv: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/SampleMetadata.tsv"
 cohort_prefix: "Liver"
 genome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/GRCh38.primary_assembly.genome.fa"
 genome_gtf: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/gencode.v38.primary_assembly.annotation.gtf"
@@ -20,57 +21,46 @@ blastp_append_script: "scripts/blastp_append_human_homology.py"
 
 # Output directories
 outdir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver"
-merged_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/merged_per_sample"
-rsem_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/results_rsem_smorf"  
+condition_results_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/results_conditions"
+condition_merged_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/merged_per_condition"
+rsem_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/results_rsem_smorf"
+
+# Sample / condition metadata
+patient_id_column: "PatientID"
+condition_column: "Condition"
 
 # Alignment / assembly stack.
-# strandedness is shared across TopHat2, HISAT2/SuperReads, StringTie and RSEM.
-# "forward" corresponds to TopHat2 fr-secondstrand / HISAT2 FR / StringTie --fr.
-# "reverse" corresponds to TopHat2 fr-firststrand / HISAT2 RF / StringTie --rf.
+# strandedness is shared across StringTie and RSEM.
+# "forward" corresponds to StringTie --fr.
+# "reverse" corresponds to StringTie --rf.
 strandedness: "reverse" # "none", "forward", or "reverse"
-stringtie_bam_source: "superreads" # "superreads" or "tophat"
 
 # Trim Galore
 threads_trim_galore: 4
 mem_trim_galore_mb: 8000
 runtime_trim_galore_min: 180
 
-# TopHat2
-threads_tophat_index: 4
-mem_tophat_index_mb: 32000
-runtime_tophat_index_min: 360
-threads_tophat_align: 6
-mem_tophat_align_mb: 64000
-runtime_tophat_align_min: 720
-tophat_mate_inner_dist: 50
-tophat_mate_std_dev: 20
+# STAR
+threads_star_index: 8
+mem_star_index_mb: 64000
+runtime_star_index_min: 360
+threads_star_align: 8
+mem_star_align_mb: 64000
+runtime_star_align_min: 720
+star_sjdb_overhang: 149
 
-# StringTie SuperReads helper
-superreads_repo: "https://github.com/gpertea/stringtie.git"
-superreads_ref: "v3.0.3"
-threads_superreads_index: 4
-mem_superreads_index_mb: 32000
-runtime_superreads_index_min: 360
-threads_superreads: 6
-mem_superreads_mb: 64000
-runtime_superreads_min: 1440
-mem_superreads_install_mb: 16000
-runtime_superreads_install_min: 240
-superreads_frag_len: 100
-superreads_frag_std: 20
+# StringTie
+threads_stringtie: 2
+stringtie_rRNA: true # set true to pass -N to StringTie3 for Total RNA / rRNA-depleted libraries
 
 # RSEM
 threads_rsem_align: 6
-stringtie_rRNA: true # set true to pass -N to StringTie3 for Total RNA / rRNA-depleted libraries
-
-# aggregation
-min_patients: 2 # Keep loci observed in at least this many patients
+threads_rsem_em: 6
 
 # ShortStop
 min_prob: None
 
 # Threads
-threads_stringtie: 2
 threads_shortstop: 2
 
 # Runtime in minutes

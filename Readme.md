@@ -74,28 +74,25 @@ The last flags are not strictly necessary.
 
 To change what ShortStop prediction to use, change `pred_csv: "sams.csv"` to `sams_secreted.csv` or `sams_intracellular.csv`. For more information, check out ShortStop documentation [here](https://github.com/brendan-miller-salk/ShortStop).
 
-The "Annotator.py" script works better with Ensembl-style GTF annotations since those make a distinction between `five_prime_utr` and `three_prime_utr`. In Gencode annotations, there is no such distinction and both fall back to custom made `UTR_ORF` bucket. Regardless of which annotation you want to use, keep it consistent across TopHat2, SuperReads indexing, and the downstream annotation steps.
+The "Annotator.py" script works better with Ensembl-style GTF annotations since those make a distinction between `five_prime_utr` and `three_prime_utr`. In Gencode annotations, there is no such distinction and both fall back to custom made `UTR_ORF` bucket. Regardless of which annotation you want to use, keep it consistent across STAR index generation, StringTie assembly/merge, and the downstream annotation steps.
 
 The current workflow is:
-`FASTQ -> Trim Galore -> TopHat2 BAMs + StringTie SuperReads BAMs -> StringTie -> TD2 -> ShortStop -> locus aggregation -> RSEM`.
+`FASTQ -> Trim Galore -> STAR BAMs -> StringTie per patient -> StringTie merge per condition -> TD2 -> ShortStop -> condition-level locus summary -> RSEM`.
 
-Trim Galore removes adapter-contaminated and low-quality sequence before any alignment. The trimmed paired FASTQs are then used in two separate genome-alignment branches:
+Trim Galore removes adapter-contaminated and low-quality sequence before alignment. The trimmed paired FASTQs are then aligned with `STAR` to produce per-patient coordinate-sorted genome BAMs. The STAR index is generated inside the workflow and uses `genome_gtf` plus the configurable `star_sjdb_overhang` setting from `config.yaml`.
 
-1. `TopHat2` generates per-sample genome-aligned BAM files (`accepted_hits.bam`).
-2. The optional `StringTie` SuperReads helper is installed from the official `gpertea/stringtie` repository, builds super-reads from the same trimmed FASTQs, and produces a merged BAM that can be fed directly into StringTie.
+StringTie first assembles transcripts per patient from the STAR BAMs, then merges those patient GTFs within each metadata-defined condition. TD2, smORF filtering, annotation, and ShortStop all run on the condition-level merged transcriptome, not on per-patient assemblies.
 
-StringTie assembles transcripts from whichever BAM source is selected by `stringtie_bam_source` in `config.yaml` (`superreads` by default, `tophat` as a fallback). The pipeline still pins StringTie to `3.0.3` and exposes `stringtie_rRNA`; set `stringtie_rRNA: true` to pass `-N` for Total RNA / rRNA-depleted libraries, and leave it `false` for polyA-selected libraries.
+Conditions are defined through `SampleMetadata.tsv`, which must contain a `PatientID` column and a configurable condition column (default `Condition`). The patient IDs in that metadata file must match the sample names in `units.csv`.
 
-RSEM quantification is still done on a separate reference: the custom smORF transcriptome built by `rsem-prepare-reference --bowtie2`. The only change is that RSEM now consumes the Trim Galore outputs instead of the raw FASTQs.
+RSEM quantification is done per condition on a condition-specific smORF reference built from that condition's `all_loci.csv`. Each patient in the condition is quantified against the same condition reference, and the pipeline emits both TPM-augmented summaries and expected-count matrices per condition.
 
 Thus, the BAMs in this pipeline now have distinct purposes:
-TopHat2 BAM: splice-aware genome alignments, retained as explicit per-sample alignment outputs.
-SuperReads BAM: merged short-read + super-read genome alignments for StringTie assembly.
-Bowtie2/RSEM BAM: alignments to the custom smORF transcriptome for quantification.
+STAR BAM: genome alignment input for per-patient StringTie assembly.
+Bowtie2/RSEM BAM: alignments to the condition-specific smORF transcriptome for quantification.
 
 The pipeline also exports locus-by-sample matrices from the RSEM `expected_count` field:
-`<cohort>.all_loci.blastp_human.expected_counts.tsv`
-`<cohort>.shared_ge<N>.blastp_human.expected_counts.tsv`
+`<cohort>.<condition>.all_loci.blastp_human.expected_counts.tsv`
 
 These are count-like RSEM expected counts for the loci present in the final BLAST-annotated summaries, not TPM values and not integer raw read counts.
 
@@ -117,15 +114,5 @@ conda clean --packages --tarballs -y
 Then, try again!
 
 If the failure happens while creating `envs/smORFs.yaml` or `envs/shortstop.yaml`, remove the failed environment directory and let Snakemake recreate it. `ShortStop` is installed with `pip --no-deps`, and its Python/ML stack now lives in `envs/shortstop.yaml` so it does not conflict with the newer `StringTie` toolchain in `envs/smORFs.yaml`.
-
-If the failure happens while creating `envs/superreads.yaml`, note that the SuperReads helper is built from the official StringTie GitHub repository during the workflow. That step requires outbound GitHub access plus a compiler/autotools toolchain inside the environment.
-
-If `install_superreads_module` fails with an autotools error like `autom4te: need GNU m4 1.4 or later: /usr/bin/m4`, the cluster is using the system `m4` instead of the conda one. The rule prepends `$CONDA_PREFIX/bin` and exports `M4` when possible; if it still reports a non-GNU `m4`, remove the failed SuperReads conda environment and rerun that rule so Snakemake rebuilds `envs/superreads.yaml`.
-
-If `install_superreads_module` fails while configuring `global-1` with `Cannot find zlib.h header`, remove the failed SuperReads conda environment and rerun the rule so Snakemake rebuilds it with `zlib` headers available inside the env.
-
-If `install_superreads_module` finds that `.deps/superreads` already exists but is not a git checkout and does not contain `SuperReads_RNA/install.sh`, it moves that incomplete dependency directory aside as `.deps/superreads.partial.<timestamp>.<pid>` and clones a clean checkout. The install rule can also reuse a complete existing checkout.
-
-On newer Linux toolchains, the vendored Jellyfish code inside `SuperReads_RNA` can also fail with Perl `xlocale.h` errors, `std::numeric_limits<__int128>` redefinition errors, or missing `uint64_t` declarations from `SuperReadsR/include/misc.hpp`. The workflow patches the cloned upstream source before build to disable the unused SWIG/Perl binding, avoid redefining libstdc++'s `__int128` limits, and include `<cstdint>` where needed.
 
 2. SLURM execution may be expressed as either `--slurm` or `--executor slurm` depending on snakemake version. If the first one does not work for you, try the second one.

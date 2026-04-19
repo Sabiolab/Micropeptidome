@@ -1,16 +1,16 @@
 rule merge_shortstop_output:
     input:
-        predict_done=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/shortstop/predict.done",
+        predict_done=f"{CONDITION_RESULTS_DIR}/{{condition}}/shortstop/predict.done",
         script=lambda wc: config["merge_script"]
     output:
-        merged=f"{MERGED_DIR}/{{sample}}.merged.csv"
+        merged=f"{CONDITION_MERGED_DIR}/{{condition}}.merged.csv"
     threads: 1
     resources:
         mem_mb=8000,
         runtime=120
     params:
-        root=RESULTS_SHORTSTOP_DIR,
-        outdir=MERGED_DIR,
+        root=CONDITION_RESULTS_DIR,
+        outdir=CONDITION_MERGED_DIR,
         min_prob=config.get("min_prob", None),
         pred_csv=config.get("pred_csv", "sams.csv")
     conda:
@@ -28,40 +28,36 @@ rule merge_shortstop_output:
         python "{input.script}" \
           --root "{params.root}" \
           --outdir "{params.outdir}" \
-          --samples "{wildcards.sample}" \
+          --samples "{wildcards.condition}" \
           --pred_csv "{params.pred_csv}" \
           $MINPROB_ARGS
 
         test -s "{output.merged}"
         """
 
-rule aggregate_smorfs_by_locus:
+rule aggregate_condition_smorfs_by_locus:
     input:
-        merged_csvs=expand(f"{MERGED_DIR}/{{sample}}.merged.csv", sample=SAMPLES),
+        merged_csv=f"{CONDITION_MERGED_DIR}/{{condition}}.merged.csv",
         script=lambda wc: config["aggregate_script"]
     output:
-        all_loci=f"{COHORT_PREFIX}.all_loci.csv",
-        shared=f"{COHORT_PREFIX}.shared_ge{MIN_PATIENTS}.csv"
+        all_loci=f"{COHORT_PREFIX}.{{condition}}.all_loci.csv"
     threads: 1
     resources:
         mem_mb=12000,
         runtime=240
     params:
-        merged_dir=MERGED_DIR,
-        out_prefix=COHORT_PREFIX,
-        min_patients=MIN_PATIENTS
+        patients=lambda wc: samples_for_condition(wc.condition)
     conda:
         "../envs/smORFs.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "$(dirname "{params.out_prefix}")"
+        mkdir -p "$(dirname "{output.all_loci}")"
 
         python "{input.script}" \
-          --merged_dir "{params.merged_dir}" \
-          --out_prefix "{params.out_prefix}" \
-          --min_patients {params.min_patients}
+          --merged_csv "{input.merged_csv}" \
+          --out_csv "{output.all_loci}" \
+          --patients {params.patients:q}
 
         test -s "{output.all_loci}"
-        test -s "{output.shared}"
         """

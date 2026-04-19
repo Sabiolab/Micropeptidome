@@ -40,3 +40,32 @@ rule stringtie_assemble:
           {params.strand_flag} \
           -m {params.min_len_nt}
         """
+
+
+rule stringtie_merge_condition:
+    input:
+        gtfs=stringtie_gtfs_for_condition,
+        ref_gtf=config["genome_gtf"]
+    output:
+        gtf=f"{STRINGTIE_MERGE_DIR}/{{condition}}/{{condition}}.merged.gtf"
+    threads: config.get("threads_stringtie", 8)
+    resources:
+        mem_mb=16000,
+        runtime=120
+    params:
+        gtf_list=lambda wc: f"{STRINGTIE_MERGE_DIR}/{wc.condition}/{wc.condition}.assemblies.txt"
+    conda:
+        "../envs/smORFs.yaml"
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "{STRINGTIE_MERGE_DIR}/{wildcards.condition}"
+
+        printf '%s\n' {input.gtfs:q} > "{params.gtf_list}"
+
+        stringtie --merge \
+          -G "{input.ref_gtf}" \
+          -o "{output.gtf}" \
+          -p {threads} \
+          "{params.gtf_list}"
+        """

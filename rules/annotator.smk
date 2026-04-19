@@ -1,11 +1,11 @@
 rule annotator_smorf_types:
     input:
-        smorf_gtf=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/shortstop/{{sample}}.smorfs_shortstop.raw.gtf",
+        smorf_gtf=f"{CONDITION_RESULTS_DIR}/{{condition}}/shortstop/{{condition}}.smorfs_shortstop.raw.gtf",
         genome_gtf=config["genome_gtf"]
     output:
-        intersect=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/shortstop/lineintersect.gtf",
-        non_intersect=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/shortstop/linenonintersect.gtf",
-        annotations=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/shortstop/Annotations.txt"
+        intersect=f"{CONDITION_RESULTS_DIR}/{{condition}}/shortstop/lineintersect.gtf",
+        non_intersect=f"{CONDITION_RESULTS_DIR}/{{condition}}/shortstop/linenonintersect.gtf",
+        annotations=f"{CONDITION_RESULTS_DIR}/{{condition}}/shortstop/Annotations.txt"
     threads: config.get("threads_annotator", 1)
     resources:
         mem_mb=16000,
@@ -15,12 +15,12 @@ rule annotator_smorf_types:
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{RESULTS_SHORTSTOP_DIR}/{wildcards.sample}/shortstop"
+        mkdir -p "{CONDITION_RESULTS_DIR}/{wildcards.condition}/shortstop"
 
         python "scripts/Annotator/Annotator.py" smorf_types \
           --smorf_gtf "{input.smorf_gtf}" \
           --ensembl_gtf "{input.genome_gtf}" \
-          --outdir "{RESULTS_SHORTSTOP_DIR}/{wildcards.sample}/shortstop" \
+          --outdir "{CONDITION_RESULTS_DIR}/{wildcards.condition}/shortstop" \
           --intersect_output "{output.intersect}" \
           --non_intersect_output "{output.non_intersect}" \
           --output_file "{output.annotations}" \
@@ -29,10 +29,10 @@ rule annotator_smorf_types:
 
 rule annotate_smorfs_gtf:
     input:
-        smorf_gtf=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/shortstop/{{sample}}.smorfs_shortstop.raw.gtf",
-        annotations=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/shortstop/Annotations.txt"
+        smorf_gtf=f"{CONDITION_RESULTS_DIR}/{{condition}}/shortstop/{{condition}}.smorfs_shortstop.raw.gtf",
+        annotations=f"{CONDITION_RESULTS_DIR}/{{condition}}/shortstop/Annotations.txt"
     output:
-        annotated_gtf=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/shortstop/{{sample}}.smorfs_shortstop.gtf"
+        annotated_gtf=f"{CONDITION_RESULTS_DIR}/{{condition}}/shortstop/{{condition}}.smorfs_shortstop.gtf"
     threads: 1
     resources:
         mem_mb=4000,

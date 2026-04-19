@@ -1,10 +1,10 @@
 rule make_smorf_rsem_inputs:
     input:
-        loci_csv=f"{COHORT_PREFIX}.all_loci.csv",
+        loci_csv=f"{COHORT_PREFIX}.{{condition}}.all_loci.csv",
         script=lambda wc: config["make_smorf_rsem_ref_script"]
     output:
-        fasta=f"{RSEM_REF_DIR}/smorfs.cds.fa",
-        tx2gene=f"{RSEM_REF_DIR}/smorfs.tx2gene.tsv"
+        fasta=f"{RSEM_DIR}/{{condition}}/reference/smorfs.cds.fa",
+        tx2gene=f"{RSEM_DIR}/{{condition}}/reference/smorfs.tx2gene.tsv"
     resources:
         mem_mb=32000,
         runtime=240
@@ -13,7 +13,7 @@ rule make_smorf_rsem_inputs:
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{RSEM_REF_DIR}"
+        mkdir -p "{RSEM_DIR}/{wildcards.condition}/reference"
 
         python "{input.script}" \
           --loci_csv "{input.loci_csv}" \
@@ -26,10 +26,10 @@ rule make_smorf_rsem_inputs:
 
 rule rsem_prepare_smorf_reference:
     input:
-        fasta=f"{RSEM_REF_DIR}/smorfs.cds.fa",
-        tx2gene=f"{RSEM_REF_DIR}/smorfs.tx2gene.tsv"
+        fasta=f"{RSEM_DIR}/{{condition}}/reference/smorfs.cds.fa",
+        tx2gene=f"{RSEM_DIR}/{{condition}}/reference/smorfs.tx2gene.tsv"
     output:
-        done=f"{RSEM_REF_DIR}/rsem_ref.done"
+        done=f"{RSEM_DIR}/{{condition}}/reference/rsem_ref.done"
     resources:
         mem_mb=32000,
         runtime=240
@@ -38,36 +38,36 @@ rule rsem_prepare_smorf_reference:
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{RSEM_REF_DIR}"
+        mkdir -p "{RSEM_DIR}/{wildcards.condition}/reference"
 
         rsem-prepare-reference \
           --transcript-to-gene-map "{input.tx2gene}" \
           --bowtie2 \
-          "{input.fasta}" "{RSEM_REF_PREFIX}"
+          "{input.fasta}" "{RSEM_DIR}/{wildcards.condition}/reference/smorfs"
 
         touch "{output.done}"
         """
 
 rule rsem_align_smorf_bowtie2:
     input:
-        r1=trimmed_fastq_r1,
-        r2=trimmed_fastq_r2,
-        ref_done=f"{RSEM_REF_DIR}/rsem_ref.done"
+        r1=trimmed_fastq_r1_for_condition,
+        r2=trimmed_fastq_r2_for_condition,
+        ref_done=f"{RSEM_DIR}/{{condition}}/reference/rsem_ref.done"
     output:
-        bam=f"{RSEM_DIR}/{{sample}}/{{sample}}.bowtie2.bam",
-        log=f"{RSEM_DIR}/{{sample}}/{{sample}}.bowtie2.log"
+        bam=f"{RSEM_DIR}/{{condition}}/{{sample}}/{{sample}}.bowtie2.bam",
+        log=f"{RSEM_DIR}/{{condition}}/{{sample}}/{{sample}}.bowtie2.log"
     threads: config.get("threads_rsem_align", 8)
     resources:
         mem_mb=32000,
         runtime=600
     params:
-        ref=RSEM_REF_PREFIX
+        ref=lambda wc: condition_rsem_ref_prefix(wc.condition)
     conda:
         "../envs/RSEM.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{RSEM_DIR}/{wildcards.sample}"
+        mkdir -p "{RSEM_DIR}/{wildcards.condition}/{wildcards.sample}"
 
         bowtie2 \
           --reorder \
@@ -88,24 +88,24 @@ rule rsem_align_smorf_bowtie2:
 
 rule rsem_quant_smorf:
     input:
-        bam=f"{RSEM_DIR}/{{sample}}/{{sample}}.bowtie2.bam",
-        ref_done=f"{RSEM_REF_DIR}/rsem_ref.done"
+        bam=f"{RSEM_DIR}/{{condition}}/{{sample}}/{{sample}}.bowtie2.bam",
+        ref_done=f"{RSEM_DIR}/{{condition}}/reference/rsem_ref.done"
     output:
-        isoforms=f"{RSEM_DIR}/{{sample}}/{{sample}}.isoforms.results",
-        genes=f"{RSEM_DIR}/{{sample}}/{{sample}}.genes.results"
+        isoforms=f"{RSEM_DIR}/{{condition}}/{{sample}}/{{sample}}.isoforms.results",
+        genes=f"{RSEM_DIR}/{{condition}}/{{sample}}/{{sample}}.genes.results"
     threads: config.get("threads_rsem_em", 8)
     resources:
         mem_mb=32000,
         runtime=600
     params:
-        ref=RSEM_REF_PREFIX,
+        ref=lambda wc: condition_rsem_ref_prefix(wc.condition),
         stranded=config.get("strandedness", "none")
     conda:
         "../envs/RSEM.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{RSEM_DIR}/{wildcards.sample}"
+        mkdir -p "{RSEM_DIR}/{wildcards.condition}/{wildcards.sample}"
 
         rsem-calculate-expression \
           --paired-end \
@@ -114,7 +114,7 @@ rule rsem_quant_smorf:
           --strandedness "{params.stranded}" \
           "{input.bam}" \
           "{params.ref}" \
-          "{RSEM_DIR}/{wildcards.sample}/{wildcards.sample}"
+          "{RSEM_DIR}/{wildcards.condition}/{wildcards.sample}/{wildcards.sample}"
 
         test -s "{output.isoforms}"
         test -s "{output.genes}"
@@ -122,13 +122,11 @@ rule rsem_quant_smorf:
 
 rule add_rsem_tpms_to_locus_summary:
     input:
-        all_loci=f"{COHORT_PREFIX}.all_loci.csv",
-        shared=f"{COHORT_PREFIX}.shared_ge{MIN_PATIENTS}.csv",
-        rsem_isoforms=expand(f"{RSEM_DIR}/{{sample}}/{{sample}}.isoforms.results", sample=SAMPLES),
+        all_loci=f"{COHORT_PREFIX}.{{condition}}.all_loci.csv",
+        rsem_isoforms=rsem_isoforms_for_condition,
         script=lambda wc: config["add_rsem_tpms_script"]
     output:
-        all_loci_tpm=f"{COHORT_PREFIX}.all_loci.with_tpms.csv",
-        shared_tpm=f"{COHORT_PREFIX}.shared_ge{MIN_PATIENTS}.with_tpms.csv"
+        all_loci_tpm=f"{COHORT_PREFIX}.{{condition}}.all_loci.with_tpms.csv"
     threads: 1
     resources:
         mem_mb=16000
@@ -138,20 +136,18 @@ rule add_rsem_tpms_to_locus_summary:
         r"""
         set -euo pipefail
         python "{input.script}" \
-          --all_loci_csv "{input.all_loci}" \
-          --shared_csv "{input.shared}" \
-          --rsem_dir "{RSEM_DIR}" \
-          --out_all_loci_csv "{output.all_loci_tpm}" \
-          --out_shared_csv "{output.shared_tpm}"
+          --summary_csv "{input.all_loci}" \
+          --rsem_dir "{RSEM_DIR}/{wildcards.condition}" \
+          --out_csv "{output.all_loci_tpm}"
         """
 
 rule export_rsem_expected_counts_all_loci:
     input:
-        loci_csv=f"{COHORT_PREFIX}.all_loci.with_tpms.blastp_human.csv",
-        rsem_isoforms=expand(f"{RSEM_DIR}/{{sample}}/{{sample}}.isoforms.results", sample=SAMPLES),
+        loci_csv=f"{COHORT_PREFIX}.{{condition}}.all_loci.with_tpms.blastp_human.csv",
+        rsem_isoforms=rsem_isoforms_for_condition,
         script=lambda wc: config["export_rsem_counts_script"]
     output:
-        matrix_tsv=f"{COHORT_PREFIX}.all_loci.blastp_human.expected_counts.tsv"
+        matrix_tsv=f"{COHORT_PREFIX}.{{condition}}.all_loci.blastp_human.expected_counts.tsv"
     threads: 1
     resources:
         mem_mb=16000
@@ -162,27 +158,6 @@ rule export_rsem_expected_counts_all_loci:
         set -euo pipefail
         python "{input.script}" \
           --loci_csv "{input.loci_csv}" \
-          --rsem_dir "{RSEM_DIR}" \
-          --out_tsv "{output.matrix_tsv}"
-        """
-
-rule export_rsem_expected_counts_shared_loci:
-    input:
-        loci_csv=f"{COHORT_PREFIX}.shared_ge{MIN_PATIENTS}.with_tpms.blastp_human.csv",
-        rsem_isoforms=expand(f"{RSEM_DIR}/{{sample}}/{{sample}}.isoforms.results", sample=SAMPLES),
-        script=lambda wc: config["export_rsem_counts_script"]
-    output:
-        matrix_tsv=f"{COHORT_PREFIX}.shared_ge{MIN_PATIENTS}.blastp_human.expected_counts.tsv"
-    threads: 2
-    resources:
-        mem_mb=16000
-    conda:
-        "../envs/smORFs.yaml"
-    shell:
-        r"""
-        set -euo pipefail
-        python "{input.script}" \
-          --loci_csv "{input.loci_csv}" \
-          --rsem_dir "{RSEM_DIR}" \
+          --rsem_dir "{RSEM_DIR}/{wildcards.condition}" \
           --out_tsv "{output.matrix_tsv}"
         """

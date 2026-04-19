@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
-# I run it with this command, but change the directories as needed:
-# python aggregate_smorfs_by_locus.py \
-#   --merged_dir /storage/scratch01/users/sbarber/Visceral/merged_per_sample \
-#   --out_prefix /storage/scratch01/users/sbarber/Visceral/smorf_locus_summary
-
 import argparse
 from pathlib import Path
+
 import pandas as pd
 
 
@@ -13,17 +9,18 @@ LOCUS_COLS = ["cds_chr", "cds_starts", "cds_ends", "cds_strand"]
 
 
 def first_nonnull(series: pd.Series):
-    """Return the first non-null value (as string) or NA if none."""
     s = series.dropna()
     if len(s) == 0:
         return pd.NA
     return s.iloc[0]
+
 
 def unique_nonnull(series: pd.Series):
     s = [str(x) for x in series.dropna() if str(x) != ""]
     if not s:
         return pd.NA
     return ",".join(sorted(set(s)))
+
 
 def most_common_nonnull(series: pd.Series):
     s = [str(x) for x in series.dropna() if str(x) != ""]
@@ -37,115 +34,193 @@ def most_common_nonnull(series: pd.Series):
     return ",".join(top)
 
 
-def main():
-    ap = argparse.ArgumentParser(
-        description="Aggregate per-sample merged ShortStop tables by genomic locus and find smORFs shared across patients."
+def normalize_locus_df(df: pd.DataFrame) -> pd.DataFrame:
+    missing = [c for c in LOCUS_COLS if c not in df.columns]
+    if missing:
+        raise ValueError(f"Missing required locus columns: {missing}")
+
+    df = df.copy()
+    df["cds_starts"] = pd.to_numeric(df["cds_starts"], errors="coerce")
+    df["cds_ends"] = pd.to_numeric(df["cds_ends"], errors="coerce")
+    df["locus"] = (
+        df["cds_chr"].astype(str)
+        + ":"
+        + df["cds_starts"].astype("Int64").astype(str)
+        + "-"
+        + df["cds_ends"].astype("Int64").astype(str)
+        + ":"
+        + df["cds_strand"].astype(str)
     )
-    ap.add_argument("--merged_dir", required=True,
-                    help="Directory containing per-sample merged CSVs (e.g., merged_per_sample/)")
-    ap.add_argument("--out_prefix", required=True,
-                    help="Prefix for output files (e.g., smorf_locus_summary)")
-    ap.add_argument("--min_patients", type=int, default=2,
-                    help="Keep loci observed in at least this many patients (default: 2)")
-    args = ap.parse_args()
+    return df
 
-    merged_dir = Path(args.merged_dir)
-    files = sorted(merged_dir.glob("*.merged.csv"))
-    if not files:
-        raise SystemExit(f"No *.merged.csv files found in: {merged_dir}")
 
-    rows = []
-    for f in files:
-        sample = f.name.replace(".merged.csv", "")
-        df = pd.read_csv(f)
+def summarize_loci(df: pd.DataFrame, patients: list[str] | None = None) -> pd.DataFrame:
+    df = normalize_locus_df(df)
 
-        missing = [c for c in LOCUS_COLS if c not in df.columns]
-        if missing:
-            raise ValueError(f"{f}: missing required locus columns: {missing}")
+    keep_cols = ["locus"] + LOCUS_COLS
+    for extra in [
+        "orf_id",
+        "sam_probability",
+        "classification",
+        "aa_seq",
+        "length",
+        "type",
+        "cds_seq",
+        "smorf_type",
+    ]:
+        if extra in df.columns:
+            keep_cols.append(extra)
+    if "sample" in df.columns:
+        keep_cols.append("sample")
 
-        # ensure numeric starts/ends if possible
-        df["cds_starts"] = pd.to_numeric(df["cds_starts"], errors="coerce")
-        df["cds_ends"]   = pd.to_numeric(df["cds_ends"], errors="coerce")
+    sub = df[keep_cols].copy()
 
-        # locus key
-        df["locus"] = (
-            df["cds_chr"].astype(str) + ":" +
-            df["cds_starts"].astype("Int64").astype(str) + "-" +
-            df["cds_ends"].astype("Int64").astype(str) + ":" +
-            df["cds_strand"].astype(str)
-        )
-
-        # keep key columns + some useful fields if present
-        keep_cols = ["locus"] + LOCUS_COLS
-        for extra in ["orf_id", "sam_probability", "classification", "aa_seq", "length", "type", "cds_seq", "smorf_type"]:
-            if extra in df.columns:
-                keep_cols.append(extra)
-
-        sub = df[keep_cols].copy()
-        sub["sample"] = sample
-        rows.append(sub)
-
-    all_df = pd.concat(rows, ignore_index=True)
-
-    # Build aggregation spec (conditionally include optional columns)
     agg_spec = dict(
         cds_chr=("cds_chr", "first"),
         cds_starts=("cds_starts", "first"),
         cds_ends=("cds_ends", "first"),
         cds_strand=("cds_strand", "first"),
-        n_patients=("sample", "nunique"),
-        patients=("sample", lambda x: ",".join(sorted(set(x)))),
-        n_rows=("sample", "size"),
+        n_rows=("locus", "size"),
     )
 
-    if "sam_probability" in all_df.columns:
+    if "sam_probability" in sub.columns:
         agg_spec["max_prob"] = ("sam_probability", "max")
-    else:
-        agg_spec["max_prob"] = ("sample", "size")
 
-    if "cds_seq" in all_df.columns:
+    if "cds_seq" in sub.columns:
         agg_spec["cds_seq"] = ("cds_seq", first_nonnull)
-    else:
-        agg_spec["cds_seq"] = ("sample", "size")
 
-    # Add aa_seq to the locus-level output (first non-null across rows)
-    if "aa_seq" in all_df.columns:
+    if "aa_seq" in sub.columns:
         agg_spec["aa_seq"] = ("aa_seq", first_nonnull)
 
-    if "smorf_type" in all_df.columns:
+    if "smorf_type" in sub.columns:
         agg_spec["smorf_type"] = ("smorf_type", most_common_nonnull)
         agg_spec["smorf_types"] = ("smorf_type", unique_nonnull)
 
-    # Aggregate across samples per locus
-    agg = (
-        all_df.groupby("locus", as_index=False)
-        .agg(**agg_spec)
+    if patients is None:
+        if "sample" not in sub.columns:
+            raise ValueError("Sample-level aggregation requires a 'sample' column.")
+        agg_spec["n_patients"] = ("sample", "nunique")
+        agg_spec["patients"] = ("sample", lambda x: ",".join(sorted(set(x))))
+    else:
+        patient_list = [str(x).strip() for x in patients if str(x).strip()]
+        patient_list = list(dict.fromkeys(sorted(patient_list)))
+        if not patient_list:
+            raise ValueError("At least one patient must be provided for merged-condition mode.")
+
+    agg = sub.groupby("locus", as_index=False).agg(**agg_spec)
+
+    if patients is not None:
+        patient_str = ",".join(patient_list)
+        agg["n_patients"] = len(patient_list)
+        agg["patients"] = patient_str
+
+    return agg.sort_values(
+        ["cds_chr", "cds_starts", "cds_ends"],
+        ascending=[True, True, True],
     )
 
-    # Output full summary
-    full_out = Path(f"{args.out_prefix}.all_loci.csv")
+
+def aggregate_directory_mode(
+    merged_dir: Path,
+    out_prefix: str,
+    min_patients: int,
+    samples: list[str] | None,
+) -> None:
+    if samples:
+        files = [merged_dir / f"{sample}.merged.csv" for sample in samples]
+    else:
+        files = sorted(merged_dir.glob("*.merged.csv"))
+    if not files:
+        raise SystemExit(f"No *.merged.csv files found in: {merged_dir}")
+
+    rows = []
+    for file_path in files:
+        if not file_path.exists():
+            raise FileNotFoundError(f"Missing merged ShortStop table: {file_path}")
+        sample = file_path.name.replace(".merged.csv", "")
+        df = pd.read_csv(file_path)
+        df["sample"] = sample
+        rows.append(df)
+
+    agg = summarize_loci(pd.concat(rows, ignore_index=True))
+
+    full_out = Path(f"{out_prefix}.all_loci.csv")
     agg.sort_values(
         ["n_patients", "cds_chr", "cds_starts", "cds_ends"],
-        ascending=[False, True, True, True]
+        ascending=[False, True, True, True],
     ).to_csv(full_out, index=False)
 
-    # Output loci shared across >= min_patients
-    shared = agg[agg["n_patients"] >= args.min_patients].copy()
-    shared_out = Path(f"{args.out_prefix}.shared_ge{args.min_patients}.csv")
+    shared = agg[agg["n_patients"] >= min_patients].copy()
+    shared_out = Path(f"{out_prefix}.shared_ge{min_patients}.csv")
     shared.sort_values(
-        ["n_patients", "cds_chr", "cds_starts", "cds_starts", "cds_ends"],
-        ascending=[False, True, True, True, True]
+        ["n_patients", "cds_chr", "cds_starts", "cds_ends"],
+        ascending=[False, True, True, True],
     ).to_csv(shared_out, index=False)
 
     print(f"Total loci: {len(agg)}")
-
-    # Print additional shared-loci counts, for reference when running manually
-    for k in [2, 5, 10, 15]:
-        n_k = (agg["n_patients"] >= k).sum()
-        print(f"Shared loci (>= {k} patients): {n_k}")
-
     print(f"[OK] Wrote: {full_out}")
     print(f"[OK] Wrote: {shared_out}")
+
+
+def aggregate_condition_mode(merged_csv: Path, out_csv: Path, patients: list[str]) -> None:
+    if not merged_csv.exists():
+        raise FileNotFoundError(f"Missing merged ShortStop table: {merged_csv}")
+
+    df = pd.read_csv(merged_csv)
+    agg = summarize_loci(df, patients=patients)
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    agg.to_csv(out_csv, index=False)
+    print(f"[OK] Wrote: {out_csv}")
+
+
+def main():
+    ap = argparse.ArgumentParser(
+        description="Aggregate merged ShortStop tables by genomic locus."
+    )
+    source = ap.add_mutually_exclusive_group(required=True)
+    source.add_argument("--merged_dir", help="Directory containing per-sample merged CSVs.")
+    source.add_argument("--merged_csv", help="Single merged CSV for one condition.")
+
+    ap.add_argument("--out_prefix", help="Prefix for directory mode outputs.")
+    ap.add_argument("--out_csv", help="Output CSV for single-condition mode.")
+    ap.add_argument(
+        "--min_patients",
+        type=int,
+        default=2,
+        help="Keep loci observed in at least this many patients in directory mode.",
+    )
+    ap.add_argument(
+        "--samples",
+        nargs="*",
+        default=None,
+        help="Optional subset of sample names for directory mode.",
+    )
+    ap.add_argument(
+        "--patients",
+        nargs="*",
+        default=None,
+        help="Patient IDs to stamp onto a condition-level summary.",
+    )
+    args = ap.parse_args()
+
+    if args.merged_dir:
+        if not args.out_prefix:
+            raise SystemExit("--out_prefix is required with --merged_dir")
+        aggregate_directory_mode(
+            merged_dir=Path(args.merged_dir),
+            out_prefix=args.out_prefix,
+            min_patients=args.min_patients,
+            samples=args.samples,
+        )
+        return
+
+    if not args.out_csv:
+        raise SystemExit("--out_csv is required with --merged_csv")
+    aggregate_condition_mode(
+        merged_csv=Path(args.merged_csv),
+        out_csv=Path(args.out_csv),
+        patients=args.patients or [],
+    )
 
 
 if __name__ == "__main__":

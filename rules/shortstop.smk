@@ -23,9 +23,9 @@ rule shortstop_predict:
     input:
         shortstop_installed=rules.install_shortstop.output.done,
         genome=config["genome_fa"],
-        smorfs_gtf=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/shortstop/{{sample}}.smorfs_shortstop.gtf"
+        smorfs_gtf=f"{CONDITION_RESULTS_DIR}/{{condition}}/shortstop/{{condition}}.smorfs_shortstop.gtf"
     output:
-        done=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/shortstop/predict.done"
+        done=f"{CONDITION_RESULTS_DIR}/{{condition}}/shortstop/predict.done"
     threads: config.get("threads_shortstop", 8)
     resources:
         mem_mb=16000,
@@ -36,13 +36,13 @@ rule shortstop_predict:
         r"""
         set -euo pipefail
 
-        cd "{RESULTS_SHORTSTOP_DIR}/{wildcards.sample}/shortstop"
+        cd "{CONDITION_RESULTS_DIR}/{wildcards.condition}/shortstop"
         mkdir -p shortstop_output
 
         unset PYTHONPATH || true
         unset LD_PRELOAD || true
         export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${{LD_LIBRARY_PATH:-}}"
-        cache_root="${{SLURM_TMPDIR:-${{TMPDIR:-/tmp}}}}/shortstop_{wildcards.sample}"
+        cache_root="${{SLURM_TMPDIR:-${{TMPDIR:-/tmp}}}}/shortstop_{wildcards.condition}"
         mkdir -p "$cache_root/numba" "$cache_root/xdg"
         export NUMBA_CACHE_DIR="$cache_root/numba"
         export XDG_CACHE_HOME="$cache_root/xdg"
