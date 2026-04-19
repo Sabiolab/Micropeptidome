@@ -83,7 +83,7 @@ Trim Galore removes adapter-contaminated and low-quality sequence before alignme
 
 StringTie first assembles transcripts per patient from the STAR BAMs, then merges those patient GTFs within each metadata-defined condition. TD2, smORF filtering, annotation, and ShortStop all run on the condition-level merged transcriptome, not on per-patient assemblies.
 
-Conditions are defined through `SampleMetadata.tsv`, which must contain a `PatientID` column and a configurable condition column (default `Condition`). The patient IDs in that metadata file must match the sample names in `units.csv`.
+Conditions are defined through `SampleMetadata.csv`, which must contain a `PatientID` column and a configurable condition column (default `Condition`). The patient IDs in that metadata file must match the sample names in `units.csv`.
 
 RSEM quantification is done per condition on a condition-specific smORF reference built from that condition's `all_loci.csv`. Each patient in the condition is quantified against the same condition reference, and the pipeline emits both TPM-augmented summaries and expected-count matrices per condition.
 

@@ -1,6 +1,6 @@
 # Paths
 units_csv: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/units_liver.csv"
-sample_metadata_tsv: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/SampleMetadata.tsv"
+sample_metadata_csv: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/SampleMetadata.csv"
 cohort_prefix: "Liver"
 genome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/GRCh38.primary_assembly.genome.fa"
 genome_gtf: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/gencode.v38.primary_assembly.annotation.gtf"
@@ -65,9 +65,9 @@ threads_shortstop: 2
 
 # Runtime in minutes
 runtime_gffread_min: 60
-runtime_transdecoder_longorfs_min: 360
-runtime_transdecoder_predict_min: 180
-runtime_shortstop_predict_min: 120
+runtime_transdecoder_longorfs_min: 720
+runtime_transdecoder_predict_min: 720
+runtime_shortstop_predict_min: 360
 
 # min_aa affects TD2.LongOrfs and the downstream peptide-length filtering step.
 # smaller values increase runtime and may increase false positives.

@@ -35,7 +35,10 @@ def sanitize_condition_label(value: str) -> str:
 
 
 config["units_csv"] = resolve_repo_path(config["units_csv"])
-config["sample_metadata_tsv"] = resolve_repo_path(config["sample_metadata_tsv"])
+metadata_config_value = config.get("sample_metadata_csv", config.get("sample_metadata_tsv"))
+if metadata_config_value is None:
+    raise ValueError("config must define 'sample_metadata_csv'.")
+config["sample_metadata_csv"] = resolve_repo_path(metadata_config_value)
 config["genome_fa"] = resolve_repo_path(config["genome_fa"])
 config["genome_gtf"] = resolve_repo_path(config["genome_gtf"])
 config["human_proteome_fa"] = resolve_repo_path(config["human_proteome_fa"])
@@ -173,17 +176,17 @@ if not SAMPLES:
     raise ValueError(f"No samples found in {config['units_csv']}. Check units.csv.")
 
 metadata_by_patient = {}
-with open(config["sample_metadata_tsv"], newline="") as fh:
-    reader = csv.DictReader(fh, delimiter="\t")
+with open(config["sample_metadata_csv"], newline="") as fh:
+    reader = csv.DictReader(fh, delimiter=",")
     if reader.fieldnames is None:
-        raise ValueError(f"{config['sample_metadata_tsv']} is empty.")
+        raise ValueError(f"{config['sample_metadata_csv']} is empty.")
     if PATIENT_ID_COLUMN not in reader.fieldnames:
         raise ValueError(
-            f"{config['sample_metadata_tsv']} must contain a '{PATIENT_ID_COLUMN}' column."
+            f"{config['sample_metadata_csv']} must contain a '{PATIENT_ID_COLUMN}' column."
         )
     if CONDITION_COLUMN not in reader.fieldnames:
         raise ValueError(
-            f"{config['sample_metadata_tsv']} must contain a '{CONDITION_COLUMN}' column."
+            f"{config['sample_metadata_csv']} must contain a '{CONDITION_COLUMN}' column."
         )
     for row in reader:
         patient = (row.get(PATIENT_ID_COLUMN) or "").strip()
@@ -191,7 +194,7 @@ with open(config["sample_metadata_tsv"], newline="") as fh:
             continue
         if patient in metadata_by_patient:
             raise ValueError(
-                f"Duplicate patient '{patient}' in {config['sample_metadata_tsv']}."
+                f"Duplicate patient '{patient}' in {config['sample_metadata_csv']}."
             )
         metadata_by_patient[patient] = row
 
@@ -199,7 +202,7 @@ missing_metadata = [sample for sample in SAMPLES if sample not in metadata_by_pa
 if missing_metadata:
     missing = ", ".join(missing_metadata[:10])
     raise ValueError(
-        "Each sample in units.csv must have metadata in SampleMetadata.tsv. "
+        "Each sample in units.csv must have metadata in SampleMetadata.csv. "
         f"Missing patients: {missing}"
     )
 
@@ -212,7 +215,7 @@ for sample in SAMPLES:
     if not raw_condition:
         raise ValueError(
             f"Patient '{sample}' has an empty '{CONDITION_COLUMN}' value in "
-            f"{config['sample_metadata_tsv']}."
+            f"{config['sample_metadata_csv']}."
         )
     condition_key = sanitize_condition_label(raw_condition)
     existing = condition_key_to_raw.get(condition_key)
