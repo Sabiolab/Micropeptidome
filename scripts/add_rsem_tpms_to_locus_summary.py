@@ -15,8 +15,8 @@ def load_isoform_tpms(path: Path) -> pd.Series:
 
 def add_tpms(summary_csv: Path, rsem_dir: Path, out_csv: Path) -> None:
     summ = pd.read_csv(summary_csv)
-    if "locus" not in summ.columns or "patients" not in summ.columns:
-        raise SystemExit(f"{summary_csv} must contain columns: locus, patients")
+    if "locus" not in summ.columns:
+        raise SystemExit(f"{summary_csv} must contain a locus column")
 
     tpm_by_sample = {}
     for sample_dir in sorted(rsem_dir.glob("*")):
@@ -27,19 +27,20 @@ def add_tpms(summary_csv: Path, rsem_dir: Path, out_csv: Path) -> None:
         if iso.exists():
             tpm_by_sample[sample] = load_isoform_tpms(iso)
 
+    sample_list = sorted(tpm_by_sample)
+
     def row_tpms(row) -> str:
         locus = str(row["locus"])
-        patients = str(row["patients"]) if pd.notna(row["patients"]) else ""
-        patient_list = [patient for patient in patients.split(",") if patient]
         values = []
-        for patient in patient_list:
-            series = tpm_by_sample.get(patient)
+        for sample in sample_list:
+            series = tpm_by_sample.get(sample)
             value = 0.0
             if series is not None and locus in series.index:
                 value = float(series.loc[locus])
             values.append(f"{value:.6f}")
         return ",".join(values)
 
+    summ["samples"] = ",".join(sample_list)
     summ["tpms"] = summ.apply(row_tpms, axis=1)
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     summ.to_csv(out_csv, index=False)

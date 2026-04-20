@@ -34,6 +34,59 @@ def most_common_nonnull(series: pd.Series):
     return ",".join(top)
 
 
+def parse_gtf_attrs(attr_str: str) -> dict[str, str]:
+    attrs = {}
+    for part in attr_str.strip().split(";"):
+        part = part.strip()
+        if not part or " " not in part:
+            continue
+        key, val = part.split(" ", 1)
+        attrs[key] = val.strip().strip('"')
+    return attrs
+
+
+def load_exact_locations(smorf_gtf: Path) -> dict[str, str]:
+    coords_by_orf = {}
+    if not smorf_gtf.exists():
+        raise FileNotFoundError(f"Missing smORF GTF: {smorf_gtf}")
+
+    cds_rows = []
+    with open(smorf_gtf) as fh:
+        for line in fh:
+            if not line or line.startswith("#"):
+                continue
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) < 9 or parts[2] != "CDS":
+                continue
+            attrs = parse_gtf_attrs(parts[8])
+            orf_id = attrs.get("gene_id") or attrs.get("transcript_id")
+            if not orf_id:
+                continue
+            cds_rows.append(
+                {
+                    "orf_id": orf_id,
+                    "chrom": parts[0],
+                    "start": int(parts[3]),
+                    "end": int(parts[4]),
+                    "strand": parts[6],
+                }
+            )
+
+    if not cds_rows:
+        return coords_by_orf
+
+    cds_df = pd.DataFrame(cds_rows)
+    for orf_id, sub in cds_df.groupby("orf_id", sort=False):
+        strand = str(sub["strand"].iloc[0])
+        chrom = str(sub["chrom"].iloc[0])
+        ascending = strand != "-"
+        sub = sub.sort_values(["start", "end"], ascending=ascending)
+        blocks = ",".join(f"{int(row.start)}-{int(row.end)}" for row in sub.itertuples())
+        coords_by_orf[str(orf_id)] = f"{chrom}:{blocks}:{strand}"
+
+    return coords_by_orf
+
+
 def normalize_locus_df(df: pd.DataFrame) -> pd.DataFrame:
     missing = [c for c in LOCUS_COLS if c not in df.columns]
     if missing:
@@ -54,8 +107,11 @@ def normalize_locus_df(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def summarize_loci(df: pd.DataFrame, patients: list[str] | None = None) -> pd.DataFrame:
+def summarize_loci(df: pd.DataFrame, exact_locations: dict[str, str] | None = None) -> pd.DataFrame:
     df = normalize_locus_df(df)
+    if exact_locations is not None and "orf_id" in df.columns:
+        df = df.copy()
+        df["exact_genomic_location"] = df["orf_id"].astype(str).map(exact_locations)
 
     keep_cols = ["locus"] + LOCUS_COLS
     for extra in [
@@ -67,12 +123,10 @@ def summarize_loci(df: pd.DataFrame, patients: list[str] | None = None) -> pd.Da
         "type",
         "cds_seq",
         "smorf_type",
+        "exact_genomic_location",
     ]:
         if extra in df.columns:
             keep_cols.append(extra)
-    if "sample" in df.columns:
-        keep_cols.append("sample")
-
     sub = df[keep_cols].copy()
 
     agg_spec = dict(
@@ -80,11 +134,14 @@ def summarize_loci(df: pd.DataFrame, patients: list[str] | None = None) -> pd.Da
         cds_starts=("cds_starts", "first"),
         cds_ends=("cds_ends", "first"),
         cds_strand=("cds_strand", "first"),
-        n_rows=("locus", "size"),
+        n_orfs=("locus", "size"),
     )
 
     if "sam_probability" in sub.columns:
         agg_spec["max_prob"] = ("sam_probability", "max")
+
+    if "orf_id" in sub.columns:
+        agg_spec["orf_ids"] = ("orf_id", unique_nonnull)
 
     if "cds_seq" in sub.columns:
         agg_spec["cds_seq"] = ("cds_seq", first_nonnull)
@@ -96,23 +153,10 @@ def summarize_loci(df: pd.DataFrame, patients: list[str] | None = None) -> pd.Da
         agg_spec["smorf_type"] = ("smorf_type", most_common_nonnull)
         agg_spec["smorf_types"] = ("smorf_type", unique_nonnull)
 
-    if patients is None:
-        if "sample" not in sub.columns:
-            raise ValueError("Sample-level aggregation requires a 'sample' column.")
-        agg_spec["n_patients"] = ("sample", "nunique")
-        agg_spec["patients"] = ("sample", lambda x: ",".join(sorted(set(x))))
-    else:
-        patient_list = [str(x).strip() for x in patients if str(x).strip()]
-        patient_list = list(dict.fromkeys(sorted(patient_list)))
-        if not patient_list:
-            raise ValueError("At least one patient must be provided for merged-condition mode.")
+    if "exact_genomic_location" in sub.columns:
+        agg_spec["exact_genomic_location"] = ("exact_genomic_location", unique_nonnull)
 
     agg = sub.groupby("locus", as_index=False).agg(**agg_spec)
-
-    if patients is not None:
-        patient_str = ",".join(patient_list)
-        agg["n_patients"] = len(patient_list)
-        agg["patients"] = patient_str
 
     return agg.sort_values(
         ["cds_chr", "cds_starts", "cds_ends"],
@@ -146,14 +190,14 @@ def aggregate_directory_mode(
 
     full_out = Path(f"{out_prefix}.all_loci.csv")
     agg.sort_values(
-        ["n_patients", "cds_chr", "cds_starts", "cds_ends"],
+        ["n_orfs", "cds_chr", "cds_starts", "cds_ends"],
         ascending=[False, True, True, True],
     ).to_csv(full_out, index=False)
 
-    shared = agg[agg["n_patients"] >= min_patients].copy()
+    shared = agg[agg["n_orfs"] >= min_patients].copy()
     shared_out = Path(f"{out_prefix}.shared_ge{min_patients}.csv")
     shared.sort_values(
-        ["n_patients", "cds_chr", "cds_starts", "cds_ends"],
+        ["n_orfs", "cds_chr", "cds_starts", "cds_ends"],
         ascending=[False, True, True, True],
     ).to_csv(shared_out, index=False)
 
@@ -162,12 +206,15 @@ def aggregate_directory_mode(
     print(f"[OK] Wrote: {shared_out}")
 
 
-def aggregate_condition_mode(merged_csv: Path, out_csv: Path, patients: list[str]) -> None:
+def aggregate_condition_mode(
+    merged_csv: Path, out_csv: Path, smorf_gtf: Path | None = None
+) -> None:
     if not merged_csv.exists():
         raise FileNotFoundError(f"Missing merged ShortStop table: {merged_csv}")
 
     df = pd.read_csv(merged_csv)
-    agg = summarize_loci(df, patients=patients)
+    exact_locations = load_exact_locations(smorf_gtf) if smorf_gtf else None
+    agg = summarize_loci(df, exact_locations=exact_locations)
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     agg.to_csv(out_csv, index=False)
     print(f"[OK] Wrote: {out_csv}")
@@ -184,6 +231,10 @@ def main():
     ap.add_argument("--out_prefix", help="Prefix for directory mode outputs.")
     ap.add_argument("--out_csv", help="Output CSV for single-condition mode.")
     ap.add_argument(
+        "--smorf_gtf",
+        help="Optional condition-level smORF GTF used to add exact genomic CDS block coordinates.",
+    )
+    ap.add_argument(
         "--min_patients",
         type=int,
         default=2,
@@ -194,12 +245,6 @@ def main():
         nargs="*",
         default=None,
         help="Optional subset of sample names for directory mode.",
-    )
-    ap.add_argument(
-        "--patients",
-        nargs="*",
-        default=None,
-        help="Patient IDs to stamp onto a condition-level summary.",
     )
     args = ap.parse_args()
 
@@ -219,7 +264,7 @@ def main():
     aggregate_condition_mode(
         merged_csv=Path(args.merged_csv),
         out_csv=Path(args.out_csv),
-        patients=args.patients or [],
+        smorf_gtf=Path(args.smorf_gtf) if args.smorf_gtf else None,
     )
 
 

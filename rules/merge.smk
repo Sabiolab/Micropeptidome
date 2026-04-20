@@ -38,6 +38,7 @@ rule merge_shortstop_output:
 rule aggregate_condition_smorfs_by_locus:
     input:
         merged_csv=f"{CONDITION_MERGED_DIR}/{{condition}}.merged.csv",
+        smorf_gtf=f"{CONDITION_RESULTS_DIR}/{{condition}}/shortstop/{{condition}}.smorfs_shortstop.gtf",
         script=lambda wc: config["aggregate_script"]
     output:
         all_loci=f"{COHORT_PREFIX}.{{condition}}.all_loci.csv"
@@ -45,8 +46,6 @@ rule aggregate_condition_smorfs_by_locus:
     resources:
         mem_mb=12000,
         runtime=240
-    params:
-        patients=lambda wc: samples_for_condition(wc.condition)
     conda:
         "../envs/smORFs.yaml"
     shell:
@@ -56,8 +55,8 @@ rule aggregate_condition_smorfs_by_locus:
 
         python "{input.script}" \
           --merged_csv "{input.merged_csv}" \
-          --out_csv "{output.all_loci}" \
-          --patients {params.patients:q}
+          --smorf_gtf "{input.smorf_gtf}" \
+          --out_csv "{output.all_loci}"
 
         test -s "{output.all_loci}"
         """

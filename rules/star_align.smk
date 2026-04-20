@@ -23,7 +23,7 @@ rule star_genome_index:
         mem_mb=int(config.get("mem_star_index_mb", 64000)),
         runtime=int(config.get("runtime_star_index_min", 360))
     params:
-        sjdb_overhang=int(config.get("star_sjdb_overhang", 149))
+        sjdbOverhang=int(config.get("read_length", 150)) - 1
     conda:
         "../envs/star.yaml"
     shell:
@@ -37,7 +37,7 @@ rule star_genome_index:
           --genomeDir "{STAR_INDEX_DIR}" \
           --genomeFastaFiles "{input.genome}" \
           --sjdbGTFfile "{input.gtf}" \
-          --sjdbOverhang {params.sjdb_overhang}
+          --sjdbOverhang {params.sjdbOverhang}
 
         test -s "{output.sa}"
         """
@@ -72,7 +72,9 @@ rule star_align:
           --readFilesCommand zcat \
           --twopassMode {params.twopass_mode} \
           --outFileNamePrefix "{params.out_prefix}" \
-          --outSAMtype BAM SortedByCoordinate
+          --outSAMtype BAM SortedByCoordinate \
+          --outSAMstrandField intronMotif \
+          --outSAMattributes All
 
         samtools index -@ {threads} "{output.bam}" "{output.bai}"
         test -s "{output.bam}"
