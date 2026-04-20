@@ -33,7 +33,7 @@ rule blastp_human_homology_locus_summary:
         script=config["blastp_append_script"]
     output:
         out_csv=f"{COHORT_PREFIX}.all_loci.with_tpms.blastp_human.csv"
-    threads: 8
+    threads: config.get("threads_blastp", 8)
     resources:
         mem_mb=24000,
         runtime=240
@@ -50,7 +50,12 @@ rule blastp_human_homology_locus_summary:
           --out_csv "{output.out_csv}" \
           --db "{params.db_prefix}" \
           --evalue {params.evalue} \
-          --threads {threads}
+          --threads {threads} \
+          --seg no \
+          --max_target_seqs 5 \
+          --max_hsps 1
+
+        test -s "{output.out_csv}"
         """
 
 rule blastp_human_homology_shared_summary:
@@ -60,7 +65,7 @@ rule blastp_human_homology_shared_summary:
         script=config["blastp_append_script"]
     output:
         out_csv=f"{COHORT_PREFIX}.shared_ge{MIN_PATIENTS}.with_tpms.blastp_human.csv"
-    threads: 8
+    threads: config.get("threads_blastp", 8)
     resources:
         mem_mb=24000,
         runtime=240
@@ -77,5 +82,10 @@ rule blastp_human_homology_shared_summary:
           --out_csv "{output.out_csv}" \
           --db "{params.db_prefix}" \
           --evalue {params.evalue} \
-          --threads {threads}
+          --threads {threads} \
+          --seg no \
+          --max_target_seqs 5 \
+          --max_hsps 1
+
+        test -s "{output.out_csv}"
         """

@@ -39,14 +39,12 @@ def most_common_nonnull(series: pd.Series):
 
 def main():
     ap = argparse.ArgumentParser(
-        description="Aggregate per-sample merged ShortStop tables by genomic locus and find smORFs shared across patients."
+        description="Aggregate merged ShortStop table by genomic locus."
     )
     ap.add_argument("--merged_dir", required=True,
-                    help="Directory containing per-sample merged CSVs (e.g., merged_per_sample/)")
+                    help="Directory containing merged CSVs (e.g., merged_per_sample/)")
     ap.add_argument("--out_prefix", required=True,
                     help="Prefix for output files (e.g., smorf_locus_summary)")
-    ap.add_argument("--min_patients", type=int, default=2,
-                    help="Keep loci observed in at least this many patients (default: 2)")
     args = ap.parse_args()
 
     merged_dir = Path(args.merged_dir)
@@ -122,30 +120,14 @@ def main():
         .agg(**agg_spec)
     )
 
-    # Output full summary
     full_out = Path(f"{args.out_prefix}.all_loci.csv")
     agg.sort_values(
-        ["n_patients", "cds_chr", "cds_starts", "cds_ends"],
-        ascending=[False, True, True, True]
+        ["cds_chr", "cds_starts", "cds_ends"],
+        ascending=[True, True, True]
     ).to_csv(full_out, index=False)
 
-    # Output loci shared across >= min_patients
-    shared = agg[agg["n_patients"] >= args.min_patients].copy()
-    shared_out = Path(f"{args.out_prefix}.shared_ge{args.min_patients}.csv")
-    shared.sort_values(
-        ["n_patients", "cds_chr", "cds_starts", "cds_starts", "cds_ends"],
-        ascending=[False, True, True, True, True]
-    ).to_csv(shared_out, index=False)
-
     print(f"Total loci: {len(agg)}")
-
-    # Print additional shared-loci counts, for reference when running manually
-    for k in [2, 5, 10, 15]:
-        n_k = (agg["n_patients"] >= k).sum()
-        print(f"Shared loci (>= {k} patients): {n_k}")
-
     print(f"[OK] Wrote: {full_out}")
-    print(f"[OK] Wrote: {shared_out}")
 
 
 if __name__ == "__main__":

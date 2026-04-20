@@ -9,8 +9,6 @@ STRINGTIE_STRAND_FLAG = {
     "reverse": "--rf",
 }[STRAND]
 
-STRINGTIE_NASCENT_FLAG = "-N" if config.get("stringtie_rRNA", False) else ""
-
 rule stringtie_assemble:
     input:
         bam=bam_path,
@@ -22,9 +20,7 @@ rule stringtie_assemble:
         mem_mb=16000,
         runtime=120
     params:
-        strand_flag=STRINGTIE_STRAND_FLAG,
-        nascent_flag=STRINGTIE_NASCENT_FLAG,
-        min_len_nt=(int(config["min_aa"]) + 1) * 3
+        strand_flag=STRINGTIE_STRAND_FLAG
     conda:
         "../envs/smORFs.yaml"
     shell:
@@ -36,7 +32,42 @@ rule stringtie_assemble:
           -G "{input.ref_gtf}" \
           -o "{output.gtf}" \
           -p {threads} \
-          {params.nascent_flag} \
+          -m 100 \
+          -c 1.5 \
+          -f 0.005 \
+          {params.strand_flag}
+        """
+
+MERGED_GTF = f"{OUTDIR}/stringtie_merged/merged.gtf"
+
+rule stringtie_merge:
+    input:
+        gtfs=expand(f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/stringtie/{{sample}}.gtf", sample=SAMPLES),
+        ref_gtf=config["genome_gtf"]
+    output:
+        gtf=MERGED_GTF
+    threads: config.get("threads_stringtie", 8)
+    resources:
+        mem_mb=16000,
+        runtime=120
+    params:
+        strand_flag=STRINGTIE_STRAND_FLAG
+    conda:
+        "../envs/smORFs.yaml"
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "{OUTDIR}/stringtie_merged"
+
+        stringtie --merge \
+          -G "{input.ref_gtf}" \
+          -o "{output.gtf}" \
+          -m 100 \
+          -c 1.5 \
+          -f 0.005 \
+          -i \
           {params.strand_flag} \
-          -m {params.min_len_nt}
+          {input.gtfs}
+
+        test -s "{output.gtf}"
         """

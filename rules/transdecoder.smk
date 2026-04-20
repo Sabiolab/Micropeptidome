@@ -1,9 +1,14 @@
+MERGED_TX_DIR  = f"{OUTDIR}/stringtie_merged"
+MERGED_TX_FA   = f"{MERGED_TX_DIR}/merged.transcripts.fa"
+MERGED_TD2_PEP = f"{MERGED_TX_DIR}/merged.transcripts.fa.TD2.pep"
+MERGED_TD2_GFF = f"{MERGED_TX_DIR}/merged.transcripts.fa.TD2.gff3"
+
 rule gffread_transcripts:
     input:
-        gtf=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/stringtie/{{sample}}.gtf",
+        gtf=MERGED_GTF,
         genome=config["genome_fa"]
     output:
-        fa=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transcripts/{{sample}}.transcripts.fa"
+        fa=MERGED_TX_FA
     threads: 1
     resources:
         mem_mb=8000,
@@ -13,21 +18,22 @@ rule gffread_transcripts:
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{RESULTS_SHORTSTOP_DIR}/{wildcards.sample}/transcripts"
 
         gffread "{input.gtf}" \
           -g "{input.genome}" \
           -w "{output.fa}"
+
+        test -s "{output.fa}"
         """
 
 rule transdecoder_longorfs:
     input:
-        fa=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transcripts/{{sample}}.transcripts.fa"
+        fa=MERGED_TX_FA
     output:
-        done=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transdecoder/longorfs.done"
+        done=f"{MERGED_TX_DIR}/longorfs.done"
     threads: 1
     params:
-        min_aa=config.get("min_aa", "30")
+        min_aa=config.get("min_aa", "100")
     resources:
         mem_mb=16000,
         runtime=int(config.get("runtime_transdecoder_longorfs_min", 360))
@@ -36,21 +42,20 @@ rule transdecoder_longorfs:
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{RESULTS_SHORTSTOP_DIR}/{wildcards.sample}/transdecoder"
+        cd "{MERGED_TX_DIR}"
 
-        cd "{RESULTS_SHORTSTOP_DIR}/{wildcards.sample}/transcripts"
-        TD2.LongOrfs -t "{wildcards.sample}.transcripts.fa" -m "{params.min_aa}"
+        TD2.LongOrfs -t merged.transcripts.fa -m "{params.min_aa}"
 
-        touch "../transdecoder/longorfs.done"
+        touch longorfs.done
         """
 
 rule transdecoder_predict:
     input:
-        fa=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transcripts/{{sample}}.transcripts.fa",
-        longorfs_done=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transdecoder/longorfs.done"
+        fa=MERGED_TX_FA,
+        longorfs_done=f"{MERGED_TX_DIR}/longorfs.done"
     output:
-        pep=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transcripts/{{sample}}.transcripts.fa.TD2.pep",
-        gff3=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transcripts/{{sample}}.transcripts.fa.TD2.gff3"
+        pep=MERGED_TD2_PEP,
+        gff3=MERGED_TD2_GFF
     threads: 1
     resources:
         mem_mb=24000,
@@ -60,11 +65,10 @@ rule transdecoder_predict:
     shell:
         r"""
         set -euo pipefail
+        cd "{MERGED_TX_DIR}"
 
-        cd "{RESULTS_SHORTSTOP_DIR}/{wildcards.sample}/transcripts"
+        TD2.Predict -t merged.transcripts.fa
 
-        TD2.Predict -t "{wildcards.sample}.transcripts.fa"
-
-        test -s "{wildcards.sample}.transcripts.fa.TD2.pep"
-        test -s "{wildcards.sample}.transcripts.fa.TD2.gff3"
+        test -s merged.transcripts.fa.TD2.pep
+        test -s merged.transcripts.fa.TD2.gff3
         """

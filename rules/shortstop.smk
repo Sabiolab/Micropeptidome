@@ -1,8 +1,8 @@
+SHORTSTOP_OUTDIR = f"{OUTDIR}/stringtie_merged/shortstop/shortstop_output"
+
 rule install_shortstop:
     input:
-        # Force reinstall if the environment spec changes (Snakemake hashes envs, but this
-        # marker file would otherwise prevent re-running in the new env).
-        env_spec="envs/shortstop.yaml"
+        env_spec="envs/smORFs.yaml"
     output:
         done=f"{OUTDIR}/.deps/shortstop_installed.done"
     threads: 1
@@ -10,7 +10,7 @@ rule install_shortstop:
         mem_mb=2000,
         runtime=30
     conda:
-        "../envs/shortstop.yaml"
+        "../envs/smORFs.yaml"
     shell:
         r"""
         set -euo pipefail
@@ -21,44 +21,47 @@ rule install_shortstop:
 
 rule shortstop_predict:
     input:
-        shortstop_installed=rules.install_shortstop.output.done,
         genome=config["genome_fa"],
-        smorfs_gtf=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/shortstop/{{sample}}.smorfs_shortstop.gtf"
+        smorfs_gtf=MERGED_ANNOTATED_GTF,
+        install_done=f"{OUTDIR}/.deps/shortstop_installed.done"
     output:
-        done=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/shortstop/predict.done"
+        done=SHORTSTOP_DONE
     threads: config.get("threads_shortstop", 8)
+    params:
+        min_prob=config.get("min_prob")
     resources:
         mem_mb=16000,
         runtime=int(config.get("runtime_shortstop_predict_min", 120))
     conda:
-        "../envs/shortstop.yaml"
+        "../envs/smORFs.yaml"
     shell:
         r"""
         set -euo pipefail
 
-        cd "{RESULTS_SHORTSTOP_DIR}/{wildcards.sample}/shortstop"
-        mkdir -p shortstop_output
+        mkdir -p "{SHORTSTOP_OUTDIR}"
 
         unset PYTHONPATH || true
         unset LD_PRELOAD || true
         export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${{LD_LIBRARY_PATH:-}}"
-        cache_root="${{SLURM_TMPDIR:-${{TMPDIR:-/tmp}}}}/shortstop_{wildcards.sample}"
+        cache_root="${{SLURM_TMPDIR:-${{TMPDIR:-/tmp}}}}/shortstop_merged"
         mkdir -p "$cache_root/numba" "$cache_root/xdg"
         export NUMBA_CACHE_DIR="$cache_root/numba"
         export XDG_CACHE_HOME="$cache_root/xdg"
 
-        test -x "$CONDA_PREFIX/bin/shortstop" || {{
-          echo "ShortStop CLI not found in $CONDA_PREFIX/bin" >&2
-          python -m pip show ShortStop >&2 || true
-          exit 1
-        }}
-        python -c "import shortstop; print(shortstop.__file__)"
+        command -v shortstop >/dev/null 2>&1
+        python -c "import shortstop"
+
+        min_prob_flag=""
+        if [ "{params.min_prob}" != "None" ] && [ -n "{params.min_prob}" ]; then
+          min_prob_flag="--min_prob {params.min_prob}"
+        fi
 
         "$CONDA_PREFIX/bin/shortstop" predict \
           --genome "{input.genome}" \
           --putative_smorfs_gtf "{input.smorfs_gtf}" \
-          --outdir shortstop_output \
-          --threads {threads}
+          --outdir "{SHORTSTOP_OUTDIR}" \
+          --threads {threads} \
+          $min_prob_flag
 
         touch "{output.done}"
         """

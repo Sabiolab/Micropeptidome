@@ -1,14 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=MICROPEP
-#SBATCH --output=MICROPEP_%j.out
-#SBATCH --error=MICROPEP_%j.err
+#SBATCH --output=/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Micropeptidome/MICROPEP_%j.out
+#SBATCH --error=/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Micropeptidome/MICROPEP_%j.err
 #SBATCH --time=22:00:00
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=12G
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=4G
 
 set -euo pipefail
 
-# change the conda path!
 source /home/sbarber/miniconda3/etc/profile.d/conda.sh
 conda activate snakemake
 

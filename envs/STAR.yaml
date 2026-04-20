@@ -1,0 +1,8 @@
+name: STAR
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - star=2.7.10a # latest is 2.7.11b, but 2.7.10a index is already built in our cluster
+  - samtools=1.20
+  - pigz
