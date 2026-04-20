@@ -27,21 +27,25 @@ rule transdecoder_longorfs:
         done=f"{CONDITION_RESULTS_DIR}/{{condition}}/transdecoder/longorfs.done"
     threads: 1
     params:
-        min_aa=config.get("min_aa", "30")
+        min_aa=config.get("min_aa", "30"),
+        workdir=lambda wc: f"{CONDITION_RESULTS_DIR}/{wc.condition}/transdecoder",
+        staged_fa="td2_input.fa"
     resources:
-        mem_mb=16000,
+        mem_mb=int(config.get("mem_transdecoder_longorfs_mb", 32000)),
         runtime=int(config.get("runtime_transdecoder_longorfs_min", 360))
     conda:
         "../envs/smORFs.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{CONDITION_RESULTS_DIR}/{wildcards.condition}/transdecoder"
+        mkdir -p "{params.workdir}"
 
-        cd "{CONDITION_RESULTS_DIR}/{wildcards.condition}/transcripts"
-        TD2.LongOrfs -t "{wildcards.condition}.transcripts.fa" -m "{params.min_aa}"
+        cp -f "{input.fa}" "{params.workdir}/{params.staged_fa}"
 
-        touch "../transdecoder/longorfs.done"
+        cd "{params.workdir}"
+        TD2.LongOrfs -t "{params.staged_fa}" -m "{params.min_aa}"
+
+        touch "longorfs.done"
         """
 
 rule transdecoder_predict:
@@ -52,8 +56,11 @@ rule transdecoder_predict:
         pep=f"{CONDITION_RESULTS_DIR}/{{condition}}/transcripts/{{condition}}.transcripts.fa.TD2.pep",
         gff3=f"{CONDITION_RESULTS_DIR}/{{condition}}/transcripts/{{condition}}.transcripts.fa.TD2.gff3"
     threads: 1
+    params:
+        workdir=lambda wc: f"{CONDITION_RESULTS_DIR}/{wc.condition}/transdecoder",
+        staged_fa="td2_input.fa"
     resources:
-        mem_mb=24000,
+        mem_mb=int(config.get("mem_transdecoder_predict_mb", 64000)),
         runtime=int(config.get("runtime_transdecoder_predict_min", 180))
     conda:
         "../envs/smORFs.yaml"
@@ -61,10 +68,15 @@ rule transdecoder_predict:
         r"""
         set -euo pipefail
 
-        cd "{CONDITION_RESULTS_DIR}/{wildcards.condition}/transcripts"
+        mkdir -p "{params.workdir}"
+        cp -f "{input.fa}" "{params.workdir}/{params.staged_fa}"
 
-        TD2.Predict -t "{wildcards.condition}.transcripts.fa"
+        cd "{params.workdir}"
+        TD2.Predict -t "{params.staged_fa}"
 
-        test -s "{wildcards.condition}.transcripts.fa.TD2.pep"
-        test -s "{wildcards.condition}.transcripts.fa.TD2.gff3"
+        cp -f "{params.staged_fa}.TD2.pep" "{output.pep}"
+        cp -f "{params.staged_fa}.TD2.gff3" "{output.gff3}"
+
+        test -s "{output.pep}"
+        test -s "{output.gff3}"
         """
