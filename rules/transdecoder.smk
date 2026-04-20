@@ -30,7 +30,8 @@ rule transdecoder_longorfs:
         min_aa=config.get("min_aa", "30"),
         workdir=lambda wc: f"{CONDITION_RESULTS_DIR}/{wc.condition}/transdecoder",
         stem="td2_input",
-        staged_fa="td2_input.fa"
+        staged_fa="td2_input.fa",
+        td2_output_dir="td2_input"
     resources:
         mem_mb=int(config.get("mem_transdecoder_longorfs_mb", 32000)),
         runtime=int(config.get("runtime_transdecoder_longorfs_min", 360))
@@ -40,12 +41,15 @@ rule transdecoder_longorfs:
         r"""
         set -euo pipefail
         mkdir -p "{params.workdir}"
-        mkdir -p "{params.workdir}/{params.stem}"
+        mkdir -p "{params.workdir}/{params.td2_output_dir}"
 
         cp -f "{input.fa}" "{params.workdir}/{params.staged_fa}"
 
         cd "{params.workdir}"
-        TD2.LongOrfs -t "{params.staged_fa}" -m "{params.min_aa}"
+        TD2.LongOrfs \
+          -t "{params.staged_fa}" \
+          -O "{params.td2_output_dir}" \
+          -m "{params.min_aa}"
 
         touch "longorfs.done"
         """
@@ -61,7 +65,8 @@ rule transdecoder_predict:
     params:
         workdir=lambda wc: f"{CONDITION_RESULTS_DIR}/{wc.condition}/transdecoder",
         stem="td2_input",
-        staged_fa="td2_input.fa"
+        staged_fa="td2_input.fa",
+        td2_output_dir="td2_input"
     resources:
         mem_mb=int(config.get("mem_transdecoder_predict_mb", 64000)),
         runtime=int(config.get("runtime_transdecoder_predict_min", 180))
@@ -72,14 +77,16 @@ rule transdecoder_predict:
         set -euo pipefail
 
         mkdir -p "{params.workdir}"
-        mkdir -p "{params.workdir}/{params.stem}"
+        mkdir -p "{params.workdir}/{params.td2_output_dir}"
         cp -f "{input.fa}" "{params.workdir}/{params.staged_fa}"
 
         cd "{params.workdir}"
-        TD2.Predict -t "{params.staged_fa}"
+        TD2.Predict \
+          -t "{params.staged_fa}" \
+          -O "{params.td2_output_dir}"
 
-        cp -f "{params.staged_fa}.TD2.pep" "{output.pep}"
-        cp -f "{params.staged_fa}.TD2.gff3" "{output.gff3}"
+        cp -f "{params.td2_output_dir}/{params.staged_fa}.TD2.pep" "{output.pep}"
+        cp -f "{params.td2_output_dir}/{params.staged_fa}.TD2.gff3" "{output.gff3}"
 
         test -s "{output.pep}"
         test -s "{output.gff3}"
