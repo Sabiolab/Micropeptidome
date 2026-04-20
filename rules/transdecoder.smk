@@ -29,6 +29,7 @@ rule transdecoder_longorfs:
     params:
         min_aa=config.get("min_aa", "30"),
         workdir=lambda wc: f"{CONDITION_RESULTS_DIR}/{wc.condition}/transdecoder",
+        stem="td2_input",
         staged_fa="td2_input.fa"
     resources:
         mem_mb=int(config.get("mem_transdecoder_longorfs_mb", 32000)),
@@ -39,6 +40,7 @@ rule transdecoder_longorfs:
         r"""
         set -euo pipefail
         mkdir -p "{params.workdir}"
+        mkdir -p "{params.workdir}/{params.stem}"
 
         cp -f "{input.fa}" "{params.workdir}/{params.staged_fa}"
 
@@ -58,6 +60,7 @@ rule transdecoder_predict:
     threads: 1
     params:
         workdir=lambda wc: f"{CONDITION_RESULTS_DIR}/{wc.condition}/transdecoder",
+        stem="td2_input",
         staged_fa="td2_input.fa"
     resources:
         mem_mb=int(config.get("mem_transdecoder_predict_mb", 64000)),
@@ -69,6 +72,7 @@ rule transdecoder_predict:
         set -euo pipefail
 
         mkdir -p "{params.workdir}"
+        mkdir -p "{params.workdir}/{params.stem}"
         cp -f "{input.fa}" "{params.workdir}/{params.staged_fa}"
 
         cd "{params.workdir}"
