@@ -51,6 +51,7 @@ star_sjdb_overhang: 149
 
 # StringTie
 threads_stringtie: 2
+stringtie_min_transcript_nt: 150 # minimum assembled transcript length for StringTie; separate from min_aa
 stringtie_rRNA: true # set true to pass -N to StringTie3 for Total RNA / rRNA-depleted libraries
 
 # RSEM

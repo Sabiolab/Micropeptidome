@@ -24,7 +24,7 @@ rule stringtie_assemble:
     params:
         strand_flag=STRINGTIE_STRAND_FLAG,
         nascent_flag=STRINGTIE_NASCENT_FLAG,
-        min_len_nt=(int(config["min_aa"]) + 1) * 3
+        min_len_nt=int(config.get("stringtie_min_transcript_nt", 150))
     conda:
         "../envs/smORFs.yaml"
     shell:
