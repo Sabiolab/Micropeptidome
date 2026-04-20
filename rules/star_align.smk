@@ -1,3 +1,17 @@
+STAR_TWOPASS_MODE = str(config.get("star_twopass_mode", "none")).strip()
+STAR_TWOPASS_MODE_NORMALIZED = (
+    "Basic" if STAR_TWOPASS_MODE.lower() == "basic" else "None"
+    if STAR_TWOPASS_MODE.lower() == "none"
+    else None
+)
+
+if STAR_TWOPASS_MODE_NORMALIZED is None:
+    raise ValueError(
+        "Invalid star_twopass_mode. Expected 'none' or 'basic', "
+        f"got: {STAR_TWOPASS_MODE!r}"
+    )
+
+
 rule star_genome_index:
     input:
         genome=config["genome_fa"],
@@ -42,7 +56,8 @@ rule star_align:
         mem_mb=int(config.get("mem_star_align_mb", 64000)),
         runtime=int(config.get("runtime_star_align_min", 720))
     params:
-        out_prefix=lambda wc: f"{STAR_DIR}/{wc.sample}/{wc.sample}."
+        out_prefix=lambda wc: f"{STAR_DIR}/{wc.sample}/{wc.sample}.",
+        twopass_mode=STAR_TWOPASS_MODE_NORMALIZED
     conda:
         "../envs/star.yaml"
     shell:
@@ -55,6 +70,7 @@ rule star_align:
           --genomeDir "{STAR_INDEX_DIR}" \
           --readFilesIn "{input.r1}" "{input.r2}" \
           --readFilesCommand zcat \
+          --twopassMode {params.twopass_mode} \
           --outFileNamePrefix "{params.out_prefix}" \
           --outSAMtype BAM SortedByCoordinate
 

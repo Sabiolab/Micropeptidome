@@ -48,6 +48,7 @@ threads_star_align: 8
 mem_star_align_mb: 64000
 runtime_star_align_min: 720
 star_sjdb_overhang: 149
+star_twopass_mode: "basic" # "none" or "basic"; set to "basic" to favor novel junction discovery
 
 # StringTie
 threads_stringtie: 2
