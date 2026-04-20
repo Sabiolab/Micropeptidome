@@ -63,10 +63,9 @@ rule transdecoder_predict:
         gff3=f"{CONDITION_RESULTS_DIR}/{{condition}}/transcripts/{{condition}}.transcripts.fa.TD2.gff3"
     threads: 1
     params:
-        workdir=lambda wc: f"{CONDITION_RESULTS_DIR}/{wc.condition}/transdecoder",
-        stem="td2_input",
-        staged_fa="td2_input.fa",
-        td2_output_dir="td2_input"
+        transcripts_dir=lambda wc: f"{CONDITION_RESULTS_DIR}/{wc.condition}/transcripts",
+        transcript_basename=lambda wc: f"{wc.condition}.transcripts.fa",
+        td2_output_dir="../transdecoder/td2_input"
     resources:
         mem_mb=int(config.get("mem_transdecoder_predict_mb", 64000)),
         runtime=int(config.get("runtime_transdecoder_predict_min", 180))
@@ -76,17 +75,10 @@ rule transdecoder_predict:
         r"""
         set -euo pipefail
 
-        mkdir -p "{params.workdir}"
-        mkdir -p "{params.workdir}/{params.td2_output_dir}"
-        cp -f "{input.fa}" "{params.workdir}/{params.staged_fa}"
-
-        cd "{params.workdir}"
+        cd "{params.transcripts_dir}"
         TD2.Predict \
-          -t "{params.staged_fa}" \
+          -t "{params.transcript_basename}" \
           -O "{params.td2_output_dir}"
-
-        cp -f "{params.td2_output_dir}/{params.staged_fa}.TD2.pep" "{output.pep}"
-        cp -f "{params.td2_output_dir}/{params.staged_fa}.TD2.gff3" "{output.gff3}"
 
         test -s "{output.pep}"
         test -s "{output.gff3}"
