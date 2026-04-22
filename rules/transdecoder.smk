@@ -1,9 +1,9 @@
 rule gffread_transcripts:
     input:
-        gtf=f"{STRINGTIE_MERGE_DIR}/{{condition}}/{{condition}}.merged.gtf",
+        gtf=cohort_stringtie_merge_gtf(),
         genome=config["genome_fa"]
     output:
-        fa=f"{CONDITION_RESULTS_DIR}/{{condition}}/transcripts/{{condition}}.transcripts.fa"
+        fa=f"{cohort_results_dir()}/transcripts/{COHORT_LABEL}.transcripts.fa"
     threads: 1
     resources:
         mem_mb=8000,
@@ -13,7 +13,7 @@ rule gffread_transcripts:
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{CONDITION_RESULTS_DIR}/{wildcards.condition}/transcripts"
+        mkdir -p "{cohort_results_dir()}/transcripts"
 
         gffread "{input.gtf}" \
           -g "{input.genome}" \
@@ -22,13 +22,13 @@ rule gffread_transcripts:
 
 rule transdecoder_longorfs:
     input:
-        fa=f"{CONDITION_RESULTS_DIR}/{{condition}}/transcripts/{{condition}}.transcripts.fa"
+        fa=f"{cohort_results_dir()}/transcripts/{COHORT_LABEL}.transcripts.fa"
     output:
-        done=f"{CONDITION_RESULTS_DIR}/{{condition}}/transdecoder/longorfs.done"
+        done=f"{cohort_results_dir()}/transdecoder/longorfs.done"
     threads: 1
     params:
         min_aa=config.get("min_aa", "30"),
-        workdir=lambda wc: f"{CONDITION_RESULTS_DIR}/{wc.condition}/transdecoder",
+        workdir=f"{cohort_results_dir()}/transdecoder",
         stem="td2_input",
         staged_fa="td2_input.fa",
         td2_output_dir="td2_input"
@@ -56,15 +56,15 @@ rule transdecoder_longorfs:
 
 rule transdecoder_predict:
     input:
-        fa=f"{CONDITION_RESULTS_DIR}/{{condition}}/transcripts/{{condition}}.transcripts.fa",
-        longorfs_done=f"{CONDITION_RESULTS_DIR}/{{condition}}/transdecoder/longorfs.done"
+        fa=f"{cohort_results_dir()}/transcripts/{COHORT_LABEL}.transcripts.fa",
+        longorfs_done=f"{cohort_results_dir()}/transdecoder/longorfs.done"
     output:
-        pep=f"{CONDITION_RESULTS_DIR}/{{condition}}/transcripts/{{condition}}.transcripts.fa.TD2.pep",
-        gff3=f"{CONDITION_RESULTS_DIR}/{{condition}}/transcripts/{{condition}}.transcripts.fa.TD2.gff3"
+        pep=f"{cohort_results_dir()}/transcripts/{COHORT_LABEL}.transcripts.fa.TD2.pep",
+        gff3=f"{cohort_results_dir()}/transcripts/{COHORT_LABEL}.transcripts.fa.TD2.gff3"
     threads: 1
     params:
-        transcripts_dir=lambda wc: f"{CONDITION_RESULTS_DIR}/{wc.condition}/transcripts",
-        transcript_basename=lambda wc: f"{wc.condition}.transcripts.fa",
+        transcripts_dir=f"{cohort_results_dir()}/transcripts",
+        transcript_basename=f"{COHORT_LABEL}.transcripts.fa",
         td2_output_dir="../transdecoder/td2_input"
     resources:
         mem_mb=int(config.get("mem_transdecoder_predict_mb", 64000)),

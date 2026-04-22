@@ -77,25 +77,28 @@ To change what ShortStop prediction to use, change `pred_csv: "sams.csv"` to `sa
 The "Annotator.py" script works better with Ensembl-style GTF annotations since those make a distinction between `five_prime_utr` and `three_prime_utr`. In Gencode annotations, there is no such distinction and both fall back to custom made `UTR_ORF` bucket. Regardless of which annotation you want to use, keep it consistent across STAR index generation, StringTie assembly/merge, and the downstream annotation steps.
 
 The current workflow is:
-`FASTQ -> Trim Galore -> STAR BAMs -> StringTie per patient -> StringTie merge per condition -> TD2 -> ShortStop -> condition-level locus summary -> RSEM`.
+`FASTQ -> Trim Galore -> STAR BAMs -> StringTie per patient -> one StringTie merge across all samples -> TD2 -> ShortStop -> one cohort-level locus summary -> RSEM`.
 
 Trim Galore removes adapter-contaminated and low-quality sequence before alignment. The trimmed paired FASTQs are then aligned with `STAR` to produce per-patient coordinate-sorted genome BAMs. The STAR index is generated inside the workflow and uses `genome_gtf` plus the configurable `star_sjdb_overhang` setting from `config.yaml`.
 
-StringTie first assembles transcripts per patient from the STAR BAMs, then merges those patient GTFs within each metadata-defined condition. TD2, smORF filtering, annotation, and ShortStop all run on the condition-level merged transcriptome, not on per-patient assemblies.
+StringTie first assembles transcripts per patient from the STAR BAMs, then merges all patient GTFs into one cohort-wide merged transcriptome. TD2, smORF filtering, annotation, and ShortStop all run on that one merged transcriptome, not on per-patient assemblies.
 
-Conditions are defined through `SampleMetadata.csv`, which must contain a `PatientID` column and a configurable condition column (default `Condition`). The patient IDs in that metadata file must match the sample names in `units.csv`.
+`SampleMetadata.csv` still needs a `PatientID` column so sample names can be checked against `units.csv`, but the active DAG no longer splits discovery or quantification by condition.
 
-RSEM quantification is done per condition on a condition-specific smORF reference built from that condition's `all_loci.csv`. Each patient in the condition is quantified against the same condition reference, and the pipeline emits both TPM-augmented summaries and expected-count matrices per condition.
+RSEM quantification is now done once against one cohort-wide smORF reference built from the single cohort `all_loci.csv`. Every sample is quantified against that same reference. The workflow keeps `all_loci.csv` and `all_loci.with_tpms.csv` as intermediates for the downstream steps and retains the BLAST-annotated summary plus a tximport R object as the main cohort outputs.
 
 Thus, the BAMs in this pipeline now have distinct purposes:
 STAR BAM: genome alignment input for per-patient StringTie assembly.
-Bowtie2/RSEM BAM: alignments to the condition-specific smORF transcriptome for quantification.
+Bowtie2/RSEM BAM: alignments to the cohort-wide smORF transcriptome for quantification.
 
-The pipeline also exports locus-by-sample matrices from the RSEM `expected_count` field:
-`<cohort>.<condition>.all_loci.blastp_human.expected_counts.tsv`
+The pipeline also exports a tximport-ready R object built from the per-sample RSEM isoform quantifications and the shared `tx2gene` map
+`<cohort>.all_loci.blastp_human.tximport.rds` with:
 
-These are count-like RSEM expected counts for the loci present in the final BLAST-annotated summaries, not TPM values and not integer raw read counts.
+- txi$counts
+- txi$abundance
+- txi$length
 
+This object contains tximport-derived counts, abundances, and effective lengths for the loci present in the final BLAST-annotated summary, which is more appropriate for downstream DE analysis than treating exported expected-count tables as raw counts.
 
 ## Troubleshooting
 

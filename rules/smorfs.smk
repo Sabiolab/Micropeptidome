@@ -1,12 +1,12 @@
 rule filter_smorfs:
     input:
-        pep=f"{CONDITION_RESULTS_DIR}/{{condition}}/transcripts/{{condition}}.transcripts.fa.TD2.pep",
-        gff3=f"{CONDITION_RESULTS_DIR}/{{condition}}/transcripts/{{condition}}.transcripts.fa.TD2.gff3",
+        pep=f"{cohort_results_dir()}/transcripts/{COHORT_LABEL}.transcripts.fa.TD2.pep",
+        gff3=f"{cohort_results_dir()}/transcripts/{COHORT_LABEL}.transcripts.fa.TD2.gff3",
         script=config["filter_smorf_pep_py"]
     output:
-        smorfs_fa=f"{CONDITION_RESULTS_DIR}/{{condition}}/smorfs/{{condition}}.smorfs.fa",
-        ids=f"{CONDITION_RESULTS_DIR}/{{condition}}/smorfs/{{condition}}.smorf_ids.txt",
-        smorfs_gff3=f"{CONDITION_RESULTS_DIR}/{{condition}}/smorfs/{{condition}}.smorfs.gff3"
+        smorfs_fa=f"{cohort_results_dir()}/smorfs/{COHORT_LABEL}.smorfs.fa",
+        ids=f"{cohort_results_dir()}/smorfs/{COHORT_LABEL}.smorf_ids.txt",
+        smorfs_gff3=f"{cohort_results_dir()}/smorfs/{COHORT_LABEL}.smorfs.gff3"
     threads: 1
     resources:
         mem_mb=8000,
@@ -16,7 +16,7 @@ rule filter_smorfs:
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{CONDITION_RESULTS_DIR}/{wildcards.condition}/smorfs"
+        mkdir -p "{cohort_results_dir()}/smorfs"
 
         python "{input.script}" \
           "{input.pep}" \
@@ -26,7 +26,7 @@ rule filter_smorfs:
           --out_ids "{output.ids}"
 
         if [ ! -s "{output.ids}" ]; then
-          echo "No smORFs remained for condition {wildcards.condition} after filtering TD2 peptides to the {config[min_aa]}-{config[max_aa]} aa range." >&2
+          echo "No smORFs remained for cohort {COHORT_LABEL} after filtering TD2 peptides to the {config[min_aa]}-{config[max_aa]} aa range." >&2
           exit 1
         fi
 
@@ -40,11 +40,11 @@ rule filter_smorfs:
 
 rule tx_to_genome_gtf:
     input:
-        sample_gtf=f"{STRINGTIE_MERGE_DIR}/{{condition}}/{{condition}}.merged.gtf",
-        smorfs_gff3=f"{CONDITION_RESULTS_DIR}/{{condition}}/smorfs/{{condition}}.smorfs.gff3",
+        sample_gtf=cohort_stringtie_merge_gtf(),
+        smorfs_gff3=f"{cohort_results_dir()}/smorfs/{COHORT_LABEL}.smorfs.gff3",
         script=config["tx_to_genome_py"]
     output:
-        gtf=temp(f"{CONDITION_RESULTS_DIR}/{{condition}}/shortstop/{{condition}}.smorfs_shortstop.raw.gtf")
+        gtf=temp(f"{cohort_results_dir()}/shortstop/{COHORT_LABEL}.smorfs_shortstop.raw.gtf")
     threads: 1
     resources:
         mem_mb=8000,
@@ -54,7 +54,7 @@ rule tx_to_genome_gtf:
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{CONDITION_RESULTS_DIR}/{wildcards.condition}/shortstop"
+        mkdir -p "{cohort_results_dir()}/shortstop"
 
         python "{input.script}" \
           --merged_gtf "{input.sample_gtf}" \

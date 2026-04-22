@@ -1,18 +1,19 @@
 rule merge_shortstop_output:
     input:
-        predict_done=f"{CONDITION_RESULTS_DIR}/{{condition}}/shortstop/predict.done",
-        script=lambda wc: config["merge_script"]
+        predict_done=cohort_shortstop_done(),
+        script=config["merge_script"]
     output:
-        merged=f"{CONDITION_MERGED_DIR}/{{condition}}.merged.csv"
+        merged=cohort_merged_csv()
     threads: 1
     resources:
         mem_mb=8000,
         runtime=120
     params:
-        root=CONDITION_RESULTS_DIR,
-        outdir=CONDITION_MERGED_DIR,
+        root=COHORT_RESULTS_ROOT,
+        outdir=COHORT_MERGED_DIR,
         min_prob=config.get("min_prob", None),
-        pred_csv=config.get("pred_csv", "sams.csv")
+        pred_csv=config.get("pred_csv", "sams.csv"),
+        cohort_label=COHORT_LABEL
     conda:
         "../envs/smORFs.yaml"
     shell:
@@ -28,20 +29,20 @@ rule merge_shortstop_output:
         python "{input.script}" \
           --root "{params.root}" \
           --outdir "{params.outdir}" \
-          --samples "{wildcards.condition}" \
+          --samples "{params.cohort_label}" \
           --pred_csv "{params.pred_csv}" \
           $MINPROB_ARGS
 
         test -s "{output.merged}"
         """
 
-rule aggregate_condition_smorfs_by_locus:
+rule aggregate_cohort_smorfs_by_locus:
     input:
-        merged_csv=f"{CONDITION_MERGED_DIR}/{{condition}}.merged.csv",
-        smorf_gtf=f"{CONDITION_RESULTS_DIR}/{{condition}}/shortstop/{{condition}}.smorfs_shortstop.gtf",
-        script=lambda wc: config["aggregate_script"]
+        merged_csv=cohort_merged_csv(),
+        smorf_gtf=cohort_shortstop_gtf(),
+        script=config["aggregate_script"]
     output:
-        all_loci=f"{COHORT_PREFIX}.{{condition}}.all_loci.csv"
+        all_loci=temp(cohort_all_loci())
     threads: 1
     resources:
         mem_mb=12000,

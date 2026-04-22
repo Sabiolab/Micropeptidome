@@ -42,24 +42,25 @@ rule stringtie_assemble:
         """
 
 
-rule stringtie_merge_condition:
+rule stringtie_merge_cohort:
     input:
-        gtfs=stringtie_gtfs_for_condition,
+        gtfs=stringtie_gtfs_for_cohort,
         ref_gtf=config["genome_gtf"]
     output:
-        gtf=f"{STRINGTIE_MERGE_DIR}/{{condition}}/{{condition}}.merged.gtf"
+        gtf=cohort_stringtie_merge_gtf()
     threads: config.get("threads_stringtie", 8)
     resources:
         mem_mb=16000,
         runtime=120
     params:
-        gtf_list=lambda wc: f"{STRINGTIE_MERGE_DIR}/{wc.condition}/{wc.condition}.assemblies.txt"
+        merge_dir=f"{STRINGTIE_MERGE_DIR}/{COHORT_LABEL}",
+        gtf_list=f"{STRINGTIE_MERGE_DIR}/{COHORT_LABEL}/{COHORT_LABEL}.assemblies.txt"
     conda:
         "../envs/smORFs.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{STRINGTIE_MERGE_DIR}/{wildcards.condition}"
+        mkdir -p "{params.merge_dir}"
 
         printf '%s\n' {input.gtfs:q} > "{params.gtf_list}"
 

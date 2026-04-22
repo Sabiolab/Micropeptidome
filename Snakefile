@@ -1,12 +1,11 @@
 #############################################
-# Snakefile: per-patient ShortStop workflow
+# Snakefile: cohort-wide smORF workflow
 # Uses: Trim Galore, STAR, StringTie, TD2, ShortStop, BLASTP,
-# Dr. Brendan Miller's smORF annotator, and condition-specific RSEM summaries.
+# Dr. Brendan Miller's smORF annotator, and cohort-wide RSEM summaries.
 #############################################
 
 import csv
 import re
-from collections import defaultdict
 from pathlib import Path
 
 configfile: "config.yaml"
@@ -26,11 +25,11 @@ def resolve_repo_path(value: str) -> str:
     return str(path if path.is_absolute() else (Path(workflow.basedir) / path).resolve())
 
 
-def sanitize_condition_label(value: str) -> str:
+def sanitize_label(value: str) -> str:
     label = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(value).strip())
     label = label.strip("._-")
     if not label:
-        raise ValueError(f"Condition label '{value}' becomes empty after sanitization.")
+        raise ValueError(f"Label '{value}' becomes empty after sanitization.")
     return label
 
 
@@ -52,24 +51,30 @@ STRINGTIE_MERGE_DIR = resolve_pipeline_path(
 RESULTS_SHORTSTOP_DIR = resolve_pipeline_path(
     config.get("results_shortstop_dir", f"{OUTDIR}/results_shortstop")
 )
-CONDITION_RESULTS_DIR = resolve_pipeline_path(
-    config.get("condition_results_dir", f"{OUTDIR}/results_conditions")
+COHORT_RESULTS_ROOT = resolve_pipeline_path(
+    config.get(
+        "cohort_results_dir",
+        config.get("condition_results_dir", f"{OUTDIR}/results_cohort"),
+    )
 )
-CONDITION_MERGED_DIR = resolve_pipeline_path(
-    config.get("condition_merged_dir", f"{OUTDIR}/merged_per_condition")
+COHORT_MERGED_DIR = resolve_pipeline_path(
+    config.get(
+        "cohort_merged_dir",
+        config.get("condition_merged_dir", f"{OUTDIR}/merged_cohort"),
+    )
 )
 RSEM_DIR = resolve_pipeline_path(config.get("rsem_dir", f"{OUTDIR}/results_rsem_smorf"))
 HUMAN_BLASTDB_PREFIX = resolve_pipeline_path(
     config.get("human_blastdb_prefix", f"{OUTDIR}/blastdb/human_proteome")
 )
 PATIENT_ID_COLUMN = str(config.get("patient_id_column", "PatientID"))
-CONDITION_COLUMN = str(config.get("condition_column", "Condition"))
 COHORT_PREFIX_RAW = str(config["cohort_prefix"])
 COHORT_PREFIX = (
     COHORT_PREFIX_RAW
     if Path(COHORT_PREFIX_RAW).is_absolute()
     else str((Path(OUTDIR) / COHORT_PREFIX_RAW).resolve())
 )
+COHORT_LABEL = sanitize_label(str(config.get("cohort_label", Path(COHORT_PREFIX).name)))
 
 
 def trimmed_r1(sample: str) -> str:
@@ -92,68 +97,68 @@ def stringtie_gtf(sample: str) -> str:
     return f"{RESULTS_SHORTSTOP_DIR}/{sample}/stringtie/{sample}.gtf"
 
 
-def condition_results_dir(condition: str) -> str:
-    return f"{CONDITION_RESULTS_DIR}/{condition}"
+def cohort_results_dir() -> str:
+    return f"{COHORT_RESULTS_ROOT}/{COHORT_LABEL}"
 
 
-def condition_shortstop_done(condition: str) -> str:
-    return f"{condition_results_dir(condition)}/shortstop/predict.done"
+def cohort_shortstop_done() -> str:
+    return f"{cohort_results_dir()}/shortstop/predict.done"
 
 
-def condition_shortstop_gtf(condition: str) -> str:
-    return f"{condition_results_dir(condition)}/shortstop/{condition}.smorfs_shortstop.gtf"
+def cohort_shortstop_gtf() -> str:
+    return f"{cohort_results_dir()}/shortstop/{COHORT_LABEL}.smorfs_shortstop.gtf"
 
 
-def condition_merged_csv(condition: str) -> str:
-    return f"{CONDITION_MERGED_DIR}/{condition}.merged.csv"
+def cohort_merged_csv() -> str:
+    return f"{COHORT_MERGED_DIR}/{COHORT_LABEL}.merged.csv"
 
 
-def condition_prefix(condition: str) -> str:
-    return f"{COHORT_PREFIX}.{condition}"
+def cohort_stringtie_merge_gtf() -> str:
+    return f"{STRINGTIE_MERGE_DIR}/{COHORT_LABEL}/{COHORT_LABEL}.merged.gtf"
 
 
-def condition_stringtie_merge_gtf(condition: str) -> str:
-    return f"{STRINGTIE_MERGE_DIR}/{condition}/{condition}.merged.gtf"
+def cohort_all_loci() -> str:
+    return f"{COHORT_PREFIX}.all_loci.csv"
 
 
-def condition_all_loci(condition: str) -> str:
-    return f"{condition_prefix(condition)}.all_loci.csv"
+def cohort_all_loci_tpm() -> str:
+    return f"{COHORT_PREFIX}.all_loci.with_tpms.csv"
 
 
-def condition_all_loci_tpm(condition: str) -> str:
-    return f"{condition_prefix(condition)}.all_loci.with_tpms.csv"
+def cohort_all_loci_blast() -> str:
+    return f"{COHORT_PREFIX}.all_loci.with_tpms.blastp_human.csv"
 
 
-def condition_all_loci_blast(condition: str) -> str:
-    return f"{condition_prefix(condition)}.all_loci.with_tpms.blastp_human.csv"
+def cohort_tximport_rds() -> str:
+    return f"{COHORT_PREFIX}.all_loci.blastp_human.tximport.rds"
 
 
-def condition_all_loci_counts(condition: str) -> str:
-    return f"{condition_prefix(condition)}.all_loci.blastp_human.expected_counts.tsv"
+def cohort_rsem_dir() -> str:
+    return f"{RSEM_DIR}/{COHORT_LABEL}"
 
 
-def condition_rsem_ref_dir(condition: str) -> str:
-    return f"{RSEM_DIR}/{condition}/reference"
+def cohort_rsem_ref_dir() -> str:
+    return f"{cohort_rsem_dir()}/reference"
 
 
-def condition_rsem_ref_prefix(condition: str) -> str:
-    return f"{condition_rsem_ref_dir(condition)}/smorfs"
+def cohort_rsem_ref_prefix() -> str:
+    return f"{cohort_rsem_ref_dir()}/smorfs"
 
 
-def condition_rsem_bam(condition: str, sample: str) -> str:
-    return f"{RSEM_DIR}/{condition}/{sample}/{sample}.bowtie2.bam"
+def sample_rsem_bam(sample: str) -> str:
+    return f"{cohort_rsem_dir()}/{sample}/{sample}.bowtie2.bam"
 
 
-def condition_rsem_log(condition: str, sample: str) -> str:
-    return f"{RSEM_DIR}/{condition}/{sample}/{sample}.bowtie2.log"
+def sample_rsem_log(sample: str) -> str:
+    return f"{cohort_rsem_dir()}/{sample}/{sample}.bowtie2.log"
 
 
-def condition_rsem_isoforms(condition: str, sample: str) -> str:
-    return f"{RSEM_DIR}/{condition}/{sample}/{sample}.isoforms.results"
+def sample_rsem_isoforms(sample: str) -> str:
+    return f"{cohort_rsem_dir()}/{sample}/{sample}.isoforms.results"
 
 
-def condition_rsem_genes(condition: str, sample: str) -> str:
-    return f"{RSEM_DIR}/{condition}/{sample}/{sample}.genes.results"
+def sample_rsem_genes(sample: str) -> str:
+    return f"{cohort_rsem_dir()}/{sample}/{sample}.genes.results"
 
 
 UNITS = {}
@@ -184,10 +189,6 @@ with open(config["sample_metadata_csv"], newline="") as fh:
         raise ValueError(
             f"{config['sample_metadata_csv']} must contain a '{PATIENT_ID_COLUMN}' column."
         )
-    if CONDITION_COLUMN not in reader.fieldnames:
-        raise ValueError(
-            f"{config['sample_metadata_csv']} must contain a '{CONDITION_COLUMN}' column."
-        )
     for row in reader:
         patient = (row.get(PATIENT_ID_COLUMN) or "").strip()
         if not patient:
@@ -205,53 +206,6 @@ if missing_metadata:
         "Each sample in units.csv must have metadata in SampleMetadata.csv. "
         f"Missing patients: {missing}"
     )
-
-condition_key_to_raw = {}
-SAMPLE_TO_CONDITION = {}
-CONDITION_TO_SAMPLES = defaultdict(list)
-for sample in SAMPLES:
-    row = metadata_by_patient[sample]
-    raw_condition = (row.get(CONDITION_COLUMN) or "").strip()
-    if not raw_condition:
-        raise ValueError(
-            f"Patient '{sample}' has an empty '{CONDITION_COLUMN}' value in "
-            f"{config['sample_metadata_csv']}."
-        )
-    condition_key = sanitize_condition_label(raw_condition)
-    existing = condition_key_to_raw.get(condition_key)
-    if existing is not None and existing != raw_condition:
-        raise ValueError(
-            "Different raw condition labels collapse to the same sanitized key: "
-            f"'{existing}' and '{raw_condition}' -> '{condition_key}'."
-        )
-    condition_key_to_raw[condition_key] = raw_condition
-    SAMPLE_TO_CONDITION[sample] = condition_key
-    CONDITION_TO_SAMPLES[condition_key].append(sample)
-
-for condition in CONDITION_TO_SAMPLES:
-    CONDITION_TO_SAMPLES[condition] = sorted(CONDITION_TO_SAMPLES[condition])
-
-CONDITIONS = sorted(CONDITION_TO_SAMPLES)
-CONDITION_SAMPLE_PAIRS = [
-    (condition, sample)
-    for condition in CONDITIONS
-    for sample in CONDITION_TO_SAMPLES[condition]
-]
-
-
-def samples_for_condition(condition: str) -> list[str]:
-    try:
-        return CONDITION_TO_SAMPLES[condition]
-    except KeyError as e:
-        raise ValueError(f"Unknown condition '{condition}'.") from e
-
-
-def validate_sample_condition(sample: str, condition: str) -> None:
-    actual_condition = SAMPLE_TO_CONDITION.get(sample)
-    if actual_condition != condition:
-        raise ValueError(
-            f"Sample '{sample}' belongs to condition '{actual_condition}', not '{condition}'."
-        )
 
 
 def fastq_r1(wc):
@@ -276,29 +230,16 @@ def trimmed_fastq_r2(wc):
     return trimmed_r2(wc.sample)
 
 
-def trimmed_fastq_r1_for_condition(wc):
-    validate_sample_condition(wc.sample, wc.condition)
-    return trimmed_r1(wc.sample)
-
-
-def trimmed_fastq_r2_for_condition(wc):
-    validate_sample_condition(wc.sample, wc.condition)
-    return trimmed_r2(wc.sample)
-
-
 def bam_path(wc):
     return star_bam(wc.sample)
 
 
-def stringtie_gtfs_for_condition(wc):
-    return [stringtie_gtf(sample) for sample in samples_for_condition(wc.condition)]
+def stringtie_gtfs_for_cohort(_wc):
+    return [stringtie_gtf(sample) for sample in SAMPLES]
 
 
-def rsem_isoforms_for_condition(wc):
-    return [
-        condition_rsem_isoforms(wc.condition, sample)
-        for sample in samples_for_condition(wc.condition)
-    ]
+def rsem_isoforms_for_cohort(_wc):
+    return [sample_rsem_isoforms(sample) for sample in SAMPLES]
 
 
 include: "rules/trim_galore.smk"
@@ -320,22 +261,14 @@ ALL_TARGETS = [
     *expand(trimmed_r2("{sample}"), sample=SAMPLES),
     *expand(star_bam("{sample}"), sample=SAMPLES),
     *expand(star_bai("{sample}"), sample=SAMPLES),
-    *[condition_stringtie_merge_gtf(condition) for condition in CONDITIONS],
-    *[condition_shortstop_done(condition) for condition in CONDITIONS],
-    *[condition_shortstop_gtf(condition) for condition in CONDITIONS],
-    *[condition_merged_csv(condition) for condition in CONDITIONS],
-    *[condition_all_loci(condition) for condition in CONDITIONS],
-    *[condition_all_loci_tpm(condition) for condition in CONDITIONS],
-    *[condition_all_loci_blast(condition) for condition in CONDITIONS],
-    *[condition_all_loci_counts(condition) for condition in CONDITIONS],
-    *[
-        condition_rsem_isoforms(condition, sample)
-        for condition, sample in CONDITION_SAMPLE_PAIRS
-    ],
-    *[
-        condition_rsem_genes(condition, sample)
-        for condition, sample in CONDITION_SAMPLE_PAIRS
-    ],
+    cohort_stringtie_merge_gtf(),
+    cohort_shortstop_done(),
+    cohort_shortstop_gtf(),
+    cohort_merged_csv(),
+    cohort_all_loci_blast(),
+    cohort_tximport_rds(),
+    *[sample_rsem_isoforms(sample) for sample in SAMPLES],
+    *[sample_rsem_genes(sample) for sample in SAMPLES],
 ]
 
 

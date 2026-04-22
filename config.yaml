@@ -16,18 +16,18 @@ merge_script: "scripts/merge_shortstop_output.py"
 aggregate_script: "scripts/aggregate_smorfs_by_locus.py"
 make_smorf_rsem_ref_script: "scripts/make_smorf_rsem_ref_from_locus_summary.py"
 add_rsem_tpms_script: "scripts/add_rsem_tpms_to_locus_summary.py"
-export_rsem_counts_script: "scripts/export_rsem_counts_matrix.py"
+export_tximport_script: "scripts/export_tximport_bundle.R"
 blastp_append_script: "scripts/blastp_append_human_homology.py"
 
 # Output directories
 outdir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver"
-condition_results_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/results_conditions"
-condition_merged_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/merged_per_condition"
+cohort_results_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/results_cohort"
+cohort_merged_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/merged_cohort"
 rsem_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/results_rsem_smorf"
 
-# Sample / condition metadata
+# Sample metadata
 patient_id_column: "PatientID"
-condition_column: "Condition"
+cohort_label: "Liver"
 
 # Alignment / assembly stack.
 # strandedness is shared across StringTie and RSEM.

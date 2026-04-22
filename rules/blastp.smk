@@ -29,10 +29,10 @@ rule make_human_proteome_blastdb:
 rule blastp_human_homology_locus_summary:
     input:
         db_done=f"{OUTDIR}/blastdb/human_proteome.db.done",
-        loci_csv=f"{COHORT_PREFIX}.{{condition}}.all_loci.with_tpms.csv",
+        loci_csv=cohort_all_loci_tpm(),
         script=config["blastp_append_script"]
     output:
-        out_csv=f"{COHORT_PREFIX}.{{condition}}.all_loci.with_tpms.blastp_human.csv"
+        out_csv=cohort_all_loci_blast()
     threads: 8
     resources:
         mem_mb=24000,
