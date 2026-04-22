@@ -54,8 +54,8 @@ rule rsem_align_smorf_bowtie2:
         r2=trimmed_fastq_r2,
         ref_done=f"{cohort_rsem_ref_dir()}/rsem_ref.done"
     output:
-        bam=lambda wc: sample_rsem_bam(wc.sample),
-        log=lambda wc: sample_rsem_log(wc.sample)
+        bam=f"{cohort_rsem_dir()}/{{sample}}/{{sample}}.bowtie2.bam",
+        log=f"{cohort_rsem_dir()}/{{sample}}/{{sample}}.bowtie2.log"
     threads: config.get("threads_rsem_align", 8)
     resources:
         mem_mb=32000,
@@ -91,8 +91,8 @@ rule rsem_quant_smorf:
         bam=lambda wc: sample_rsem_bam(wc.sample),
         ref_done=f"{cohort_rsem_ref_dir()}/rsem_ref.done"
     output:
-        isoforms=lambda wc: sample_rsem_isoforms(wc.sample),
-        genes=lambda wc: sample_rsem_genes(wc.sample)
+        isoforms=f"{cohort_rsem_dir()}/{{sample}}/{{sample}}.isoforms.results",
+        genes=f"{cohort_rsem_dir()}/{{sample}}/{{sample}}.genes.results"
     threads: config.get("threads_rsem_em", 8)
     resources:
         mem_mb=32000,
