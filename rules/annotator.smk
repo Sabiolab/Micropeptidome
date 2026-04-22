@@ -10,17 +10,19 @@ rule annotator_smorf_types:
     resources:
         mem_mb=16000,
         runtime=120
+    params:
+        shortstop_dir=f"{cohort_results_dir()}/shortstop"
     conda:
         "../envs/BedTools.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{cohort_results_dir()}/shortstop"
+        mkdir -p "{params.shortstop_dir}"
 
         python "scripts/Annotator/Annotator.py" smorf_types \
           --smorf_gtf "{input.smorf_gtf}" \
           --ensembl_gtf "{input.genome_gtf}" \
-          --outdir "{cohort_results_dir()}/shortstop" \
+          --outdir "{params.shortstop_dir}" \
           --intersect_output "{output.intersect}" \
           --non_intersect_output "{output.non_intersect}" \
           --output_file "{output.annotations}" \

@@ -30,19 +30,22 @@ rule shortstop_predict:
     resources:
         mem_mb=16000,
         runtime=int(config.get("runtime_shortstop_predict_min", 120))
+    params:
+        shortstop_dir=f"{cohort_results_dir()}/shortstop",
+        cache_label=COHORT_LABEL
     conda:
         "../envs/shortstop.yaml"
     shell:
         r"""
         set -euo pipefail
 
-        cd "{cohort_results_dir()}/shortstop"
+        cd "{params.shortstop_dir}"
         mkdir -p shortstop_output
 
         unset PYTHONPATH || true
         unset LD_PRELOAD || true
         export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${{LD_LIBRARY_PATH:-}}"
-        cache_root="${{SLURM_TMPDIR:-${{TMPDIR:-/tmp}}}}/shortstop_{COHORT_LABEL}"
+        cache_root="${{SLURM_TMPDIR:-${{TMPDIR:-/tmp}}}}/shortstop_{params.cache_label}"
         mkdir -p "$cache_root/numba" "$cache_root/xdg"
         export NUMBA_CACHE_DIR="$cache_root/numba"
         export XDG_CACHE_HOME="$cache_root/xdg"

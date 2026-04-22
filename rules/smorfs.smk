@@ -11,12 +11,14 @@ rule filter_smorfs:
     resources:
         mem_mb=8000,
         runtime=60
+    params:
+        smorfs_dir=f"{cohort_results_dir()}/smorfs"
     conda:
         "../envs/smORFs.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{cohort_results_dir()}/smorfs"
+        mkdir -p "{params.smorfs_dir}"
 
         python "{input.script}" \
           "{input.pep}" \
@@ -49,12 +51,14 @@ rule tx_to_genome_gtf:
     resources:
         mem_mb=8000,
         runtime=120
+    params:
+        shortstop_dir=f"{cohort_results_dir()}/shortstop"
     conda:
         "../envs/smORFs.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{cohort_results_dir()}/shortstop"
+        mkdir -p "{params.shortstop_dir}"
 
         python "{input.script}" \
           --merged_gtf "{input.sample_gtf}" \

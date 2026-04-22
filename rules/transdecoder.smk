@@ -8,12 +8,14 @@ rule gffread_transcripts:
     resources:
         mem_mb=8000,
         runtime=int(config.get("runtime_gffread_min", 60))
+    params:
+        transcripts_dir=f"{cohort_results_dir()}/transcripts"
     conda:
         "../envs/smORFs.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{cohort_results_dir()}/transcripts"
+        mkdir -p "{params.transcripts_dir}"
 
         gffread "{input.gtf}" \
           -g "{input.genome}" \

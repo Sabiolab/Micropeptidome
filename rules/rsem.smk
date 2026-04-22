@@ -8,12 +8,14 @@ rule make_smorf_rsem_inputs:
     resources:
         mem_mb=32000,
         runtime=240
+    params:
+        ref_dir=cohort_rsem_ref_dir()
     conda:
         "../envs/smORFs.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{cohort_rsem_ref_dir()}"
+        mkdir -p "{params.ref_dir}"
 
         python "{input.script}" \
           --loci_csv "{input.loci_csv}" \
@@ -33,17 +35,20 @@ rule rsem_prepare_smorf_reference:
     resources:
         mem_mb=32000,
         runtime=240
+    params:
+        ref_dir=cohort_rsem_ref_dir(),
+        ref_prefix=cohort_rsem_ref_prefix()
     conda:
         "../envs/RSEM.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{cohort_rsem_ref_dir()}"
+        mkdir -p "{params.ref_dir}"
 
         rsem-prepare-reference \
           --transcript-to-gene-map "{input.tx2gene}" \
           --bowtie2 \
-          "{input.fasta}" "{cohort_rsem_ref_prefix()}"
+          "{input.fasta}" "{params.ref_prefix}"
 
         touch "{output.done}"
         """
@@ -61,13 +66,14 @@ rule rsem_align_smorf_bowtie2:
         mem_mb=32000,
         runtime=600
     params:
-        ref=cohort_rsem_ref_prefix()
+        ref=cohort_rsem_ref_prefix(),
+        rsem_dir=cohort_rsem_dir()
     conda:
         "../envs/RSEM.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{cohort_rsem_dir()}/{wildcards.sample}"
+        mkdir -p "{params.rsem_dir}/{wildcards.sample}"
 
         bowtie2 \
           --reorder \
@@ -99,13 +105,14 @@ rule rsem_quant_smorf:
         runtime=600
     params:
         ref=cohort_rsem_ref_prefix(),
-        stranded=config.get("strandedness", "none")
+        stranded=config.get("strandedness", "none"),
+        rsem_dir=cohort_rsem_dir()
     conda:
         "../envs/RSEM.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{cohort_rsem_dir()}/{wildcards.sample}"
+        mkdir -p "{params.rsem_dir}/{wildcards.sample}"
 
         rsem-calculate-expression \
           --paired-end \
@@ -114,7 +121,7 @@ rule rsem_quant_smorf:
           --strandedness "{params.stranded}" \
           "{input.bam}" \
           "{params.ref}" \
-          "{cohort_rsem_dir()}/{wildcards.sample}/{wildcards.sample}"
+          "{params.rsem_dir}/{wildcards.sample}/{wildcards.sample}"
 
         test -s "{output.isoforms}"
         test -s "{output.genes}"
@@ -130,6 +137,8 @@ rule add_rsem_tpms_to_locus_summary:
     threads: 1
     resources:
         mem_mb=16000
+    params:
+        rsem_dir=cohort_rsem_dir()
     conda:
         "../envs/smORFs.yaml"
     shell:
@@ -137,7 +146,7 @@ rule add_rsem_tpms_to_locus_summary:
         set -euo pipefail
         python "{input.script}" \
           --summary_csv "{input.all_loci}" \
-          --rsem_dir "{cohort_rsem_dir()}" \
+          --rsem_dir "{params.rsem_dir}" \
           --out_csv "{output.all_loci_tpm}"
         """
 
@@ -152,6 +161,8 @@ rule export_tximport_all_loci:
     threads: 1
     resources:
         mem_mb=16000
+    params:
+        rsem_dir=cohort_rsem_dir()
     conda:
         "../envs/tximport.yaml"
     shell:
@@ -160,6 +171,6 @@ rule export_tximport_all_loci:
         Rscript "{input.script}" \
           --loci_csv "{input.loci_csv}" \
           --tx2gene "{input.tx2gene}" \
-          --rsem_dir "{cohort_rsem_dir()}" \
+          --rsem_dir "{params.rsem_dir}" \
           --out_rds "{output.tximport_rds}"
         """
