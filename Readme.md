@@ -83,7 +83,7 @@ Trim Galore removes adapter-contaminated and low-quality sequence before alignme
 
 StringTie first assembles transcripts per patient from the STAR BAMs, then merges all patient GTFs into one cohort-wide merged transcriptome. TD2, smORF filtering, annotation, and ShortStop all run on that one merged transcriptome, not on per-patient assemblies.
 
-`SampleMetadata.csv` still needs a `PatientID` column so sample names can be checked against `units.csv`, but the active DAG no longer splits discovery or quantification by condition.
+`units.csv` is now the only sample sheet required by the active DAG. The workflow no longer requires `SampleMetadata.csv` for validation or grouping.
 
 RSEM quantification is now done once against one cohort-wide smORF reference built from the single cohort `all_loci.csv`. Every sample is quantified against that same reference. The workflow keeps `all_loci.csv` and `all_loci.with_tpms.csv` as intermediates for the downstream steps and retains the BLAST-annotated summary plus a tximport R object as the main cohort outputs.
 

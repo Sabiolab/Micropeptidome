@@ -1,6 +1,5 @@
 # Paths
 units_csv: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/units_liver.csv"
-sample_metadata_csv: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/SampleMetadata.csv"
 cohort_prefix: "Liver"
 genome_fa: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/GRCh38.primary_assembly.genome.fa"
 genome_gtf: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/gencode.v38.primary_assembly.annotation.gtf"
@@ -24,9 +23,6 @@ outdir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver
 cohort_results_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/results_cohort"
 cohort_merged_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/merged_cohort"
 rsem_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/results_rsem_smorf"
-
-# Sample metadata
-patient_id_column: "PatientID"
 
 # Alignment / assembly stack.
 # strandedness is shared across StringTie and RSEM.

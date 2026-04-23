@@ -34,10 +34,6 @@ def sanitize_label(value: str) -> str:
 
 
 config["units_csv"] = resolve_repo_path(config["units_csv"])
-metadata_config_value = config.get("sample_metadata_csv", config.get("sample_metadata_tsv"))
-if metadata_config_value is None:
-    raise ValueError("config must define 'sample_metadata_csv'.")
-config["sample_metadata_csv"] = resolve_repo_path(metadata_config_value)
 config["genome_fa"] = resolve_repo_path(config["genome_fa"])
 config["genome_gtf"] = resolve_repo_path(config["genome_gtf"])
 config["human_proteome_fa"] = resolve_repo_path(config["human_proteome_fa"])
@@ -68,7 +64,6 @@ RSEM_DIR = resolve_pipeline_path(config.get("rsem_dir", f"{OUTDIR}/results_rsem_
 HUMAN_BLASTDB_PREFIX = resolve_pipeline_path(
     config.get("human_blastdb_prefix", f"{OUTDIR}/blastdb/human_proteome")
 )
-PATIENT_ID_COLUMN = str(config.get("patient_id_column", "PatientID"))
 COHORT_PREFIX_RAW = str(config["cohort_prefix"])
 COHORT_PREFIX = (
     COHORT_PREFIX_RAW
@@ -180,33 +175,6 @@ with open(config["units_csv"], newline="") as fh:
 SAMPLES = sorted(UNITS)
 if not SAMPLES:
     raise ValueError(f"No samples found in {config['units_csv']}. Check units.csv.")
-
-metadata_by_patient = {}
-with open(config["sample_metadata_csv"], newline="") as fh:
-    reader = csv.DictReader(fh, delimiter=",")
-    if reader.fieldnames is None:
-        raise ValueError(f"{config['sample_metadata_csv']} is empty.")
-    if PATIENT_ID_COLUMN not in reader.fieldnames:
-        raise ValueError(
-            f"{config['sample_metadata_csv']} must contain a '{PATIENT_ID_COLUMN}' column."
-        )
-    for row in reader:
-        patient = (row.get(PATIENT_ID_COLUMN) or "").strip()
-        if not patient:
-            continue
-        if patient in metadata_by_patient:
-            raise ValueError(
-                f"Duplicate patient '{patient}' in {config['sample_metadata_csv']}."
-            )
-        metadata_by_patient[patient] = row
-
-missing_metadata = [sample for sample in SAMPLES if sample not in metadata_by_patient]
-if missing_metadata:
-    missing = ", ".join(missing_metadata[:10])
-    raise ValueError(
-        "Each sample in units.csv must have metadata in SampleMetadata.csv. "
-        f"Missing patients: {missing}"
-    )
 
 
 def fastq_r1(wc):
