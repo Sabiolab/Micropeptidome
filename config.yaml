@@ -48,6 +48,8 @@ threads_star_align: 8
 mem_star_align_mb: 64000
 runtime_star_align_min: 720
 read_length: 150
+use_prebuilt_star_index: false # true = skip STAR genomeGenerate and use star_index_dir as an existing STAR index
+star_index_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liver/star_index"
 star_twopass_mode: "basic" # "none" or "basic"; set to "basic" to favor novel junction discovery
 
 # StringTie

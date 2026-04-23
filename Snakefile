@@ -45,6 +45,7 @@ config["human_proteome_fa"] = resolve_repo_path(config["human_proteome_fa"])
 TRIM_DIR = resolve_pipeline_path(config.get("trim_dir", f"{OUTDIR}/trim_galore"))
 STAR_DIR = resolve_pipeline_path(config.get("star_dir", f"{OUTDIR}/star"))
 STAR_INDEX_DIR = resolve_pipeline_path(config.get("star_index_dir", f"{OUTDIR}/star_index"))
+USE_PREBUILT_STAR_INDEX = bool(config.get("use_prebuilt_star_index", False))
 STRINGTIE_MERGE_DIR = resolve_pipeline_path(
     config.get("stringtie_merge_dir", f"{OUTDIR}/stringtie_merge")
 )

@@ -79,7 +79,7 @@ The "Annotator.py" script works better with Ensembl-style GTF annotations since 
 The current workflow is:
 `FASTQ -> Trim Galore -> STAR BAMs -> StringTie per patient -> one StringTie merge across all samples -> TD2 -> ShortStop -> one cohort-level locus summary -> RSEM`.
 
-Trim Galore removes adapter-contaminated and low-quality sequence before alignment. The trimmed paired FASTQs are then aligned with `STAR` to produce per-patient coordinate-sorted genome BAMs. The STAR index is generated inside the workflow and uses `genome_gtf` plus the configurable `star_sjdb_overhang` setting from `config.yaml`.
+Trim Galore removes adapter-contaminated and low-quality sequence before alignment. The trimmed paired FASTQs are then aligned with `STAR` to produce per-patient coordinate-sorted genome BAMs. By default the STAR index is generated inside the workflow from `genome_fa`, `genome_gtf`, and `read_length`. If you already have a STAR index, set `use_prebuilt_star_index: true` and point `star_index_dir` at that directory; the workflow will validate that the expected STAR index files exist there and then use it directly.
 
 StringTie first assembles transcripts per patient from the STAR BAMs, then merges all patient GTFs into one cohort-wide merged transcriptome. TD2, smORF filtering, annotation, and ShortStop all run on that one merged transcriptome, not on per-patient assemblies.
 
