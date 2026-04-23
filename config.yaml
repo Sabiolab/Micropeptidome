@@ -27,7 +27,6 @@ rsem_dir: "/storage/scratch01/groups/md/microproteins/Microproteins_pipeline/Liv
 
 # Sample metadata
 patient_id_column: "PatientID"
-cohort_label: "Liver"
 
 # Alignment / assembly stack.
 # strandedness is shared across StringTie and RSEM.

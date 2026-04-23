@@ -75,7 +75,7 @@ COHORT_PREFIX = (
     if Path(COHORT_PREFIX_RAW).is_absolute()
     else str((Path(OUTDIR) / COHORT_PREFIX_RAW).resolve())
 )
-COHORT_LABEL = sanitize_label(str(config.get("cohort_label", Path(COHORT_PREFIX).name)))
+COHORT_LABEL = sanitize_label(Path(COHORT_PREFIX).name)
 
 
 def trimmed_r1(sample: str) -> str:
