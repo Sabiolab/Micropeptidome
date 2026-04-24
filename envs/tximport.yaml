@@ -1,0 +1,7 @@
+name: tximport
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base
+  - bioconductor-tximport

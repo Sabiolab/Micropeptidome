@@ -1,22 +1,24 @@
 rule filter_smorfs:
     input:
-        pep=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transcripts/{{sample}}.transcripts.fa.TD2.pep",
-        gff3=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/transcripts/{{sample}}.transcripts.fa.TD2.gff3",
+        pep=f"{cohort_results_dir()}/transcripts/{COHORT_LABEL}.transcripts.fa.TD2.pep",
+        gff3=f"{cohort_results_dir()}/transcripts/{COHORT_LABEL}.transcripts.fa.TD2.gff3",
         script=config["filter_smorf_pep_py"]
     output:
-        smorfs_fa=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/smorfs/{{sample}}.smorfs.fa",
-        ids=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/smorfs/{{sample}}.smorf_ids.txt",
-        smorfs_gff3=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/smorfs/{{sample}}.smorfs.gff3"
+        smorfs_fa=f"{cohort_results_dir()}/smorfs/{COHORT_LABEL}.smorfs.fa",
+        ids=f"{cohort_results_dir()}/smorfs/{COHORT_LABEL}.smorf_ids.txt",
+        smorfs_gff3=f"{cohort_results_dir()}/smorfs/{COHORT_LABEL}.smorfs.gff3"
     threads: 1
     resources:
         mem_mb=8000,
         runtime=60
+    params:
+        smorfs_dir=f"{cohort_results_dir()}/smorfs"
     conda:
         "../envs/smORFs.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{RESULTS_SHORTSTOP_DIR}/{wildcards.sample}/smorfs"
+        mkdir -p "{params.smorfs_dir}"
 
         python "{input.script}" \
           "{input.pep}" \
@@ -26,7 +28,7 @@ rule filter_smorfs:
           --out_ids "{output.ids}"
 
         if [ ! -s "{output.ids}" ]; then
-          echo "No smORFs remained for sample {wildcards.sample} after filtering TD2 peptides to the {config[min_aa]}-{config[max_aa]} aa range." >&2
+          echo "No smORFs remained for cohort {COHORT_LABEL} after filtering TD2 peptides to the {config[min_aa]}-{config[max_aa]} aa range." >&2
           exit 1
         fi
 
@@ -40,21 +42,23 @@ rule filter_smorfs:
 
 rule tx_to_genome_gtf:
     input:
-        sample_gtf=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/stringtie/{{sample}}.gtf",
-        smorfs_gff3=f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/smorfs/{{sample}}.smorfs.gff3",
+        sample_gtf=cohort_stringtie_merge_gtf(),
+        smorfs_gff3=f"{cohort_results_dir()}/smorfs/{COHORT_LABEL}.smorfs.gff3",
         script=config["tx_to_genome_py"]
     output:
-        gtf=temp(f"{RESULTS_SHORTSTOP_DIR}/{{sample}}/shortstop/{{sample}}.smorfs_shortstop.raw.gtf")
+        gtf=temp(f"{cohort_results_dir()}/shortstop/{COHORT_LABEL}.smorfs_shortstop.raw.gtf")
     threads: 1
     resources:
         mem_mb=8000,
         runtime=120
+    params:
+        shortstop_dir=f"{cohort_results_dir()}/shortstop"
     conda:
         "../envs/smORFs.yaml"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{RESULTS_SHORTSTOP_DIR}/{wildcards.sample}/shortstop"
+        mkdir -p "{params.shortstop_dir}"
 
         python "{input.script}" \
           --merged_gtf "{input.sample_gtf}" \

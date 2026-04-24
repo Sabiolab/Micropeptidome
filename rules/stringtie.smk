@@ -24,7 +24,7 @@ rule stringtie_assemble:
     params:
         strand_flag=STRINGTIE_STRAND_FLAG,
         nascent_flag=STRINGTIE_NASCENT_FLAG,
-        min_len_nt=(int(config["min_aa"]) + 1) * 3
+        min_len_nt=int(config.get("stringtie_min_transcript_nt", 150))
     conda:
         "../envs/smORFs.yaml"
     shell:
@@ -39,4 +39,34 @@ rule stringtie_assemble:
           {params.nascent_flag} \
           {params.strand_flag} \
           -m {params.min_len_nt}
+        """
+
+
+rule stringtie_merge_cohort:
+    input:
+        gtfs=stringtie_gtfs_for_cohort,
+        ref_gtf=config["genome_gtf"]
+    output:
+        gtf=cohort_stringtie_merge_gtf()
+    threads: config.get("threads_stringtie", 8)
+    resources:
+        mem_mb=16000,
+        runtime=120
+    params:
+        merge_dir=f"{STRINGTIE_MERGE_DIR}/{COHORT_LABEL}",
+        gtf_list=f"{STRINGTIE_MERGE_DIR}/{COHORT_LABEL}/{COHORT_LABEL}.assemblies.txt"
+    conda:
+        "../envs/smORFs.yaml"
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "{params.merge_dir}"
+
+        printf '%s\n' {input.gtfs:q} > "{params.gtf_list}"
+
+        stringtie --merge \
+          -G "{input.ref_gtf}" \
+          -o "{output.gtf}" \
+          -p {threads} \
+          "{params.gtf_list}"
         """

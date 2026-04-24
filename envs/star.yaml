@@ -1,9 +1,8 @@
-name: tophat
+name: star
 channels:
   - conda-forge
   - bioconda
 dependencies:
   - python=3.10
-  - tophat
-  - bowtie2
+  - star
   - samtools
